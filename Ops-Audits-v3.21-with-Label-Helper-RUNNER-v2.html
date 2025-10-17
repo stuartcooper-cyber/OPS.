@@ -1,0 +1,1869 @@
+<!DOCTYPE html>
+
+<html><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/>
+<title>Ops Audits</title>
+<style>
+  :root{--bg:#0f1420;--panel:#141b2a;--card:#121826;--text:#e6ebff;--muted:#9aa6bf;--chip:#273453;--ring:#3b4a72;--btn:#1f2a44;--btnb:#2a385f;}
+  body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto}
+  header{display:flex;justify-content:space-between;align-items:center;padding:24px}
+  h1{margin:0;font-size:34px}
+  main{max-width:1280px;margin:0 auto;padding:0 20px 60px}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+  @media(max-width:1100px){.grid{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:780px){.grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:560px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid #1a2236;border-radius:14px;padding:16px;display:flex;flex-direction:column;min-height:150px}
+  .card h3{margin:6px 0}
+  .btn{background:var(--btn);color:var(--text);border:1px solid var(--btnb);padding:9px 12px;border-radius:10px;cursor:pointer}
+  .btn:hover{filter:brightness(1.07)}
+  .panel{background:var(--panel);border:1px solid #1a2236;border-radius:16px;padding:16px;margin:12px 0}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .chip{display:inline-flex;align-items:center;gap:8px;background:var(--chip);padding:8px 12px;border-radius:12px;border:1px solid var(--ring)}
+  .chip.danger{background:#2b0e12;border-color:#6b3030}
+  .q{background:#0d1322;border:1px solid #202a46;border-radius:12px;padding:12px;margin:12px 0}
+  .q-title{font-weight:700;margin-bottom:10px}
+  .opt{display:flex;gap:12px;flex-wrap:wrap}
+  .opt label{background:#0a1020;border:1px solid #223055;padding:7px 10px;border-radius:10px;display:flex;align-items:center;gap:6px;cursor:pointer}
+  .input{width:100%;padding:9px;border-radius:10px;border:1px solid #2b3552;background:#0d1322;color:var(--text)}
+  .tag{display:inline-block;border:1px dashed #355;border-radius:8px;padding:4px 8px;margin:2px 8px 2px 0;color:#a7b7d7;font-size:12px}
+  .toolbar{display:flex;gap:10px;justify-content:flex-end;margin:8px 0}
+</style>
+<style>
+/* BROT embedded styles (scoped) */
+#brot :root{
+  --bg:#0b1220; --panel:#111a2c; --muted:#9aa4b2; --text:#e6edf3; --good:#53d17f; --bad:#ff7a7a; --pill:#1f2a44;
+  --radius:14px; --gap:12px;
+}#brot *{box-sizing:border-box}#brot body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}#brot .wrap{max-width:1100px;margin:28px auto;padding:0 16px}#brot .hdr{display:flex;gap:12px;align-items:center;margin-bottom:16px}#brot h1{font-size:22px;margin:0}#brot a.btn,button.btn{background:#1c2a46;border:1px solid #2a3b63;color:var(--text);padding:8px 14px;border-radius:10px;text-decoration:none;cursor:pointer}#brot .card{background:var(--panel);border:1px solid #1c2742;border-radius:var(--radius);padding:16px;margin:14px 0}#brot .opt{display:flex;gap:12px;align-items:center;flex-wrap:wrap}#brot .input, select{background:#0f1626;border:1px solid #26375f;color:var(--text);padding:8px 10px;border-radius:10px;outline:none}#brot .input:focus, select:focus{border-color:#4b6cff}#brot .table{width:100%;border-collapse:collapse;font-size:14px;margin-top:8px}#brot .table th,.table td{border:1px solid #1c2742;padding:8px 10px;text-align:left}#brot .muted{color:var(--muted)}#brot .pill{border:1px solid #334a7a;border-radius:999px;padding:3px 10px;display:inline-block}#brot .kbd{background:#0f1626;border:1px solid #26375f;border-radius:6px;padding:3px 8px}#brot footer{color:var(--muted);font-size:12px;margin:24px 0 40px}#brot summary{user-select:none}#brot .btn-back-floating{position:fixed;left:16px;top:16px;z-index:9999;background:#1c2a46;border:1px solid #2a3b63;
+padding:10px 14px;border-radius:999px;text-decoration:none;color:#e6edf3;box-shadow:0 4px 16px rgba(0,0,0,.35)}#brot .btn-back-floating:hover{filter:brightness(1.1)}#brot .btn-wide{padding:12px 18px;border-radius:12px}
+
+</style><style>.section{display:none} .section.active{display:block}</style><style>#brot.section:not(.active){ display:none !important; }</style><style>
+.section{display:none}
+.section.active{display:block}
+#brot.section:not(.active){ display:none !important; }
+</style><style>
+.section{display:none}
+.section.active{display:block}
+#brot.section:not(.active){display:none !important;}
+/* Hide any accidental #brot descendants under home, just in case */
+#home #brot, #home [id^="brot"]{display:none !important;}
+</style>
+<style>
+/* Hide any internal buttons that appear inside the embedded BROT when shown in the runner.
+   (The real toolbar buttons live in the runner header.) */
+#runner #brot a.btn,
+#runner #brot button { display: none !important; }
+
+/* When the runner is not active, prevent any embedded BROT content from appearing on the home screen. */
+body:not(.runner-active) #brot { display: none !important; }
+</style>
+<style>
+      #brot-root{display:none;}
+      #brot-root .__brot_inner_print_removed{display:none !important;}
+    </style>
+<style>
+.section{display:none}
+.section.active{display:block}
+#brot.section:not(.active){display:none !important;}
+#home #brot{display:none !important;}
+</style><style>
+/* === Brand skin (applied on top of existing styles) ===
+   Fonts per template: SoDo Sans Bold/Regular (falls back if not installed).
+   Color system set via CSS variables for easy tuning.
+*/
+:root{
+  --sbx-green:#006241;       /* primary */
+  --sbx-green-dark:#1e3932;  /* deep */
+  --sbx-mint:#d4e9e2;        /* soft accent */
+  --sbx-cream:#f7f2e7;       /* warm background */
+  --sbx-ink:#0e0e0e;         /* text */
+  --sbx-ink-70:rgba(14,14,14,.7);
+  --sbx-border:rgba(30,57,50,.15);
+  --sbx-focus:#007e6a;
+}
+
+html,body{
+  font-family:"SoDo Sans","SoDo Sans Regular","Inter","Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;
+  color:var(--sbx-ink);
+  background:linear-gradient(180deg,var(--sbx-cream),#ffffff 60%);
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+h1,h2,h3{
+  font-family:"SoDo Sans","SoDo Sans Bold","Inter","Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;
+  letter-spacing:.2px;
+}
+
+.wrap{
+  max-width:1100px;
+}
+
+/* Tiles grid */
+.grid{
+  gap:1.25rem !important;
+}
+.card{
+  border:1px solid var(--sbx-border);
+  border-radius:20px;
+  box-shadow:0 6px 16px rgba(0,0,0,.06);
+  overflow:hidden;
+  transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+  background:#fff;
+}
+.card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 10px 24px rgba(0,0,0,.10);
+  border-color:rgba(0,98,65,.25);
+}
+.card h3{
+  font-weight:700;
+  color:var(--sbx-green-dark);
+}
+.card p{
+  color:var(--sbx-ink-70);
+}
+.card .chip{
+  background:var(--sbx-mint);
+  color:var(--sbx-green-dark);
+  border-radius:999px;
+  padding:.25rem .6rem;
+  font-size:.8rem;
+  font-weight:600;
+}
+
+/* Buttons */
+.btn, button, .card-actions .btn{
+  border-radius:999px;
+  padding:.6rem 1rem;
+  border:1px solid var(--sbx-border);
+  background:#fff;
+  color:var(--sbx-green-dark);
+  font-weight:700;
+  transition:background .15s ease, transform .06s ease, color .15s ease, border-color .15s ease;
+  cursor:pointer;
+}
+.btn.primary{
+  background:var(--sbx-green);
+  color:#fff;
+  border-color:transparent;
+}
+.btn:hover{
+  background:var(--sbx-mint);
+  border-color:rgba(0,98,65,.25);
+}
+.btn.primary:hover{
+  background:#047152;
+}
+.btn:active{ transform:translateY(1px); }
+
+/* Section headers / toolbars */
+.toolbar{
+  display:flex;
+  gap:.5rem;
+  justify-content:flex-end;
+  padding:.75rem;
+  background:linear-gradient(180deg,#ffffff, var(--sbx-cream));
+  border-bottom:1px solid var(--sbx-border);
+  position:sticky;
+  top:0;
+  z-index:10;
+}
+
+.section h2, .section header h2{
+  color:var(--sbx-green-dark);
+  border-bottom:2px solid var(--sbx-mint);
+  padding-bottom:.25rem;
+}
+
+/* Tables inside audits */
+.section table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+  overflow:hidden;
+  border:1px solid var(--sbx-border);
+  border-radius:16px;
+  background:#fff;
+}
+.section th{
+  text-align:left;
+  background:var(--sbx-green-dark);
+  color:#fff;
+  padding:.75rem;
+}
+.section td{
+  padding:.65rem .75rem;
+  border-top:1px solid var(--sbx-border);
+}
+.section tr:nth-child(odd) td{
+  background:#fafafa;
+}
+
+/* Inputs */
+input[type="text"], input[type="date"], select, textarea{
+  border:1px solid var(--sbx-border);
+  border-radius:12px;
+  padding:.55rem .7rem;
+  outline:none;
+}
+input:focus, select:focus, textarea:focus{
+  border-color:var(--sbx-focus);
+  box-shadow:0 0 0 3px rgba(0,126,106,.15);
+}
+
+/* Progress/score chips */
+.score, .badge{
+  background:var(--sbx-green);
+  color:#fff;
+  border-radius:12px;
+  padding:.25rem .5rem;
+  font-weight:700;
+}
+
+/* Back-to-top or minor link buttons */
+a.link, .link{
+  color:var(--sbx-green);
+  text-decoration:none;
+  border-bottom:1px dashed rgba(0,98,65,.35);
+}
+a.link:hover{ color:#047152; border-bottom-color:#047152; }
+
+/* Gentle card for warnings/errors */
+.notice{
+  background:#fff6e6;
+  border:1px solid #ffd08a;
+  color:#8a4b00;
+  border-radius:16px;
+  padding:.75rem 1rem;
+}
+</style>
+<style id="contrast-fix">
+/* High-contrast theme fixes */
+:root{
+  --bg:#0b1216;
+  --panel:#0f1920;
+  --panel-2:#0f1620;
+  --text:#f4f7f6;
+  --muted:#dbe5e0;
+  --accent:#00a16b; /* lifted from your PPT green */
+  --accent-2:#5fe1b0;
+  --chip-bg:rgba(0,161,107,.16);
+  --chip-text:#e6fff4;
+  --danger:#b94a4a;
+  --danger-bg:rgba(185,74,74,.18);
+  --warning:#f5cc5a;
+  --warning-bg:rgba(245,204,90,.15);
+  --cream:#0b1216; /* remove light band */
+}
+body{
+  color:var(--text) !important;
+  background:var(--bg) !important;
+}
+.card, .panel, .section, .tile, .box, .audit-card{
+  background:linear-gradient(180deg, var(--panel), var(--panel-2)) !important;
+  color:var(--text) !important;
+  box-shadow: 0 8px 28px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.04) !important;
+  border: 1px solid rgba(255,255,255,.06) !important;
+}
+h1, h2, h3, h4, h5, h6, .heading{
+  color:var(--text) !important;
+  text-shadow: 0 1px 0 rgba(0,0,0,.35);
+}
+.badge, .pill, .chip, .tag{
+  background: var(--chip-bg) !important;
+  color: var(--chip-text) !important;
+  border: 1px solid rgba(0,161,107,.35) !important;
+}
+.btn, button, .button{
+  background:linear-gradient(180deg, var(--accent), #00895c) !important;
+  color:#00140c !important;
+  border:none !important;
+  box-shadow: 0 6px 20px rgba(0,161,107,.25) !important;
+}
+.btn:hover, button:hover, .button:hover{ filter:brightness(1.05) saturate(1.05) }
+.btn-secondary, .ghost, .outline{
+  background:transparent !important;
+  color:var(--muted) !important;
+  border:1px solid rgba(255,255,255,.25) !important;
+}
+.score-box, .stat, .kpi{
+  background:rgba(255,255,255,.06) !important;
+  color:var(--text) !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+}
+.score-box.critical, .kpi.critical{
+  background:var(--danger-bg) !important;
+  border-color: rgba(185,74,74,.45) !important;
+  color:#ffd8d8 !important;
+}
+label, .hint, .subtle, .caption{ color:var(--muted) !important; }
+input, select, textarea{
+  background:rgba(0,0,0,.25) !important;
+  color:var(--text) !important;
+  border:1px solid rgba(255,255,255,.18) !important;
+}
+input::placeholder, textarea::placeholder{ color:rgba(255,255,255,.55) !important; }
+hr{ border-color: rgba(255,255,255,.08) !important; }
+.section-banner, .cream, .band{ background: transparent !important; color: var(--text) !important; }
+.link, a{ color:var(--accent-2) !important; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script><script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script><style>.gap-photo-holder{margin-top:8px;display:none}.gap-photo-holder .gap-photo-thumb{display:none;max-width:120px;border-radius:8px;margin-top:6px;border:1px solid rgba(0,0,0,.1)}</style></head>
+<body class="themed">
+<header><h1>Ops Audits</h1><div id="today"></div></header>
+<main class="section active" id="home"><div class="grid" id="grid"></div></main>
+<main id="runner" style="display:none">
+<div class="toolbar">
+<button class="btn" id="printBtn">Print</button>
+<button class="btn" id="backBtn">Back</button>
+<button class="btn" id="saveBtn">Save</button>
+<button class="btn" id="resetBtn">Reset</button>
+</div>
+<h2 id="auditTitle"></h2>
+<p id="auditDesc" style="color:#9aa6bf"></p>
+<div class="row">
+<div class="chip"><strong>Score</strong> <span id="scorePct">100%</span></div>
+<div class="chip"><strong>Gaps</strong> <span id="gapsCnt">0</span></div>
+<div class="chip danger"><strong>Critical</strong> <span id="critCnt">0</span></div>
+</div>
+<div id="sections"></div>
+</main>
+<script id="registry" type="application/json">{"tiles":[{"id":"food_safety_fy25","title":"Food Safety FY26","desc":"0 questions (FY26) + non-scoring items. Gaps-only PDF. Photos enabled for scored items.","mode":"scored"},{"id":"health_safety_aug","title":"Health & Safety FY26","desc":"64 questions (FY26) + Multi‑Risk penalties. Gaps-only PDF. Sub-points are prompts.","mode":"scored"},{"id":"allergen_assessment","title":"Allergen Assessment FY26","desc":"13 questions (6 Critical, 6 Major, 1 Minor) + non-scoring Observation. Sub-points are prompts.","mode":"scored"},{"id":"asset_protection","title":"Asset Protection Check","desc":"Each failed question deducts -3 pts.","mode":"scored"},{"id":"store_walk_dt","title":"Store Walk Thru (Drive Thru)","desc":"Zones, routines, and timings. Simple check count—no extra penalties.","mode":"scored"},{"id":"dt_go_see","title":"Drive Thru Go See","desc":"Guided feedback capture (no scoring).","mode":"feedback"},{"id":"sea_assessment","title":"Store Experience Self Assessment (SEA)","subtitle":"Each Gap –3 pts. Photo + notes on gaps.","scored":true,"mode":"scored","desc":"Each Gap –3 pts. Photo and notes on gaps."},{"id":"brot","title":"BROT – Beverage Routine Observation","subtitle":"Scored observation incl. pace timers","mode":"scored"},{"id":"label_helper","title":"Label Helper (Shelf Life)","desc":"Search product and get Opened→Discard by times","icon":"🕑"}],"content":{"food_safety_fy25":{"scoring":"critical:-10pts; major:-5pts; minor:0pts","sections":{"BEHAVIOURS":[{"text":"CRITICAL: Partners do not work while ill; Bandages are used properly","critical":true,"prompts":["Partner is working with severe cough or runny nose","Partner is working with diarrhea","Partner is working with symptoms of vomiting","Partner is working with fever","Partner is working with jaundice (yellowing of skin or eyes)","Partner is working with an exposed infected lesion on hand, wrist or arm","Exposed bandage on hand is not covered by a single-use glove","Is there a standard gap? (One or more X = \"Standard Gap\")"],"photo":true},{"text":"CRITICAL: Food is not touched with bare hands; Single use gloves are used properly","critical":true,"prompts":["Single use gloves were washed and reused","Avoided Bare Hand Contact with Food","Proper Glove Use","Is there a standard gap? (One or more X = \"Standard Gap\")"],"photo":true},{"text":"CRITICAL: Hands are washed at appropriate times","critical":true,"prompts":["Did not wash hands after using restroom","Did not wash hands before putting on gloves to handle food","Did not wash hands before starting shift or after returning from break","Did not wash hands after cleaning tasks","Did not wash hands after coughing, sneezing or blowing nose","Did not wash hands after bussing tables or handling dirty dishes/equipment","Did not wash hands after eating, drinking, smoking, chewing tobacco or gum (touching mouth)","Did not wash hands after touching face, hair or skin","Did not wash hands after handling waste","Is there a standard gap? (One or more X = \"Standard Gap\")"],"photo":true},{"text":"CRITICAL: Proper handwashing procedures are followed","critical":true,"prompts":["Did not use soap","Did not dry hands","Dried hands on apron","Did not use the designated hand sink","Is there a standard gap? (One or more X = \"Standard Gap\")"],"photo":true},{"text":"MAJOR: Hand sinks are accessible, stocked and used properly","major":true,"prompts":["Access to restroom hand sink is blocked","Access to Back of House hand sink is blocked","Access to Drive Thru hand sink is blocked","Access to Front of House hand sink is blocked","Items are stores on/in hand sink","Other tasks are taking place at hand sink (i.e. dumping, dish washing)","Soap dispenser is empty or not present","Soap dispenser does not work","Is there a standard gap? (One or more X = \"Standard Gap\")"],"photo":true},{"text":"MAJOR: Fingernails, hair and jewellery to standard","major":true,"prompts":["Hair beyond shoulder length is not restrained","Fingernails are not trimmed or not clean","Fingernails are artificial, have polish or coating of any kind","Food handler is wearing jewellery on the wrist","Food handler is wearing more than one plain ring","Partners are not following the new and updated UK company personal hygiene policy. Emphasis on hair being tied back & clean clothing","Is there a standard gap? (One or more X = \"Standard Gap\")"],"photo":true},{"text":"MAJOR: Partners can demonstrate Food Safety knowledge","major":true,"prompts":["Person-in-charge does not answer the following question accurately: \"What are some of the illness symptoms that would exclude a person from coming to work?\"","Person-in-charge does not answer the following question accurately: \"What two actions should be taken if a partner informs you they have been diagnosed with a notifiable disease and still has symptoms?\"","Person-in-charge does not answer the following question accurately: \"Where are the documented procedures indicating what to do if a vomit/diarrhea (biohazard) event occurs in the store.\"","Is there a standard gap? (One or more X = \"Standard Gap\")"],"photo":true},{"text":"MAJOR: Partners food and beverages are stored properly","major":true,"prompts":["Partner food/beverage is not stored in a designated, covered container in refrigerator","Partner food/beverage is stored on shelving next to or above dry goods, clean smallwares or single use items","Partner food container is not labelled","Is there a standard gap? (One or more X = \"Standard Gap\")"],"photo":true},{"text":"MAJOR: Partners follow eating, drinking and smoking standards","major":true,"prompts":["Partner is eating in front of house food storage area or food prep area","Partner is drinking in front of house food storage area or food prep area","Partner is eating in back of house food storage area or food prep area","Partner is drinking in back of house food storage area or food prep area","Partner is vaping or smoking in store","Partner is chewing tobacco in food service area","Partner is chewing gum in food service area","Is there a standard gap? (One or more X = \"Standard Gap\")"],"photo":true},{"text":"MINOR: Partner uniforms are clean","minor":true,"prompts":["Apron not removed before going on break","Apron not removed before using restroom","Apron not removed before cleaning restroom","Apron not removed when taking out rubbish","Apron is dirty at the beginning of shift","Is there a standard gap? (One or more X = \"Standard Gap\")"],"photo":true},{"text":"MINOR: Partner personal items stored properly","minor":true,"prompts":["Partner personal items (not food) are stored near food or food contact surfaces","Is there a standard gap? (One or more X = \"Standard Gap\")"],"photo":true},{"text":"MINOR: Food Safety Training and Certification is present and valid (where applicable)","minor":true,"prompts":["Partner has not received food safety certification/training","Partner Barista Food Safety induction training not completed","Supervisors have not completed Supervisor Training and working with title","Store managers have not completed any management training on safety or hygiene","Partners have not completed refresher training.","Partners have not completed company Allergen training","Is there a standard gap? (One or more X = \"Standard Gap\")"],"photo":true},{"text":"MINOR: Health Department reports and permits are available","minor":true,"prompts":["Health inspection report not available","Is there a standard gap? (One or more X = \"Standard Gap\")"],"photo":true},{"text":"MINOR: Food Safety signage is present","minor":true,"prompts":["Food safety policy not present","Personal hygiene policy not present","Food Hygiene Rating is on display (FHR)","Is there a standard gap? (One or more X = \"Standard Gap\")"],"photo":true}],"TEMPERATURE":[{"text":"CRITICAL: Adequate Refrigeration for TCS Foods","critical":true,"prompts":["Comments","Store is operating with a complete lack of mechanical refrigeration for TCS foods","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"CRITICAL: TCS food held in Bar unit at proper temperature","critical":true,"prompts":["Comments","TCS food in bar unit held at  > + 8°C","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"CRITICAL: TCS food held in BoH unit at proper temperature","critical":true,"prompts":["Comments","TCS food in BoH unit held at > + 8°C","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"CRITICAL: TCS food held in chill wall unit at proper temperature","critical":true,"prompts":["Comments","TCS food in chill wall refrigeration held at > + 8°C","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"CRITICAL: TCS food held in carafes at condiment bar at proper temperature","critical":true,"prompts":["Comments","Condiment bar carafes at  > + 8°C","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"CRITICAL: TCS food held in FoH unit at proper temperature","critical":true,"prompts":["Comments","TCS food in FoH unit held at > + 8°C","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"CRITICAL: Proper Cooling Procedures in Place (In Store Baking Only)","critical":true,"prompts":["Comments","Proper Cooling Procedures not in Place (In Store Baking Only)","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MAJOR: Refrigeration Units Within Required Temperature","critical":false,"prompts":["Comments","FoH Refrigerator air temp above required temperature","BoH Refrigerator air temp above required temperature","Refrigerated display case air temp above required temperature","Other Refrigeration air temp above required temperature","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MAJOR: Product Thermometer Present and Working Properly","critical":false,"prompts":["Comments","Product thermometer not present","Product thermometer not functioning  or calibrated properly","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MAJOR: Temperature Logs Completed","critical":false,"prompts":["Comments","Closing shift temperatures missing for refrigerators/freezers","Opening shift temperatures missing for refrigerators/freezers","Mid-day temperatures missing for refrigerated display case","Received TCS food temperatures missing","When required, corrective action not noted","Temperature logs have complete day(s) missing","Temperature logs have complete week(s) missing","Temperature logs completed in advance","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MAJOR: Frozen Product Held Solidly Frozen","critical":false,"prompts":["Comments","Frozen produce is stored and not solidly frozen","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MINOR: Gaskets in Good Repair","critical":false,"prompts":["Comments","FoH refrigerator/freezer gasket is not present","FoH refrigerator/freezer gasket is in poor repair","BoH refrigerator/freezer gasket is not present","BoH refrigerator/freezer gasket is in poor repair","Other refrigeration gasket is not present","Other refrigeration gasket is in poor repair","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MINOR: Refrigeration Ventilation Maintained","critical":false,"prompts":["Comments","Items stored on top of BOH refrigerator/freezer blocking vents","Items stacked in RTD/E case blocking air flow","External rear grille area of display case has 3 dimensional dust","Reach-in refrigerator shelves lined with cardboard, blocking air flow","Is there a standard gap? (One or more X = \"Standard Gap\")"]}],"PESTS":[{"text":"CRITICAL: No Critical Fruit Fly Activity Observed","critical":true,"prompts":["Comments","Fruit flies observed on food or inside pastry case","Fruit flies observed in multiple areas of store","Fruit flies observed on food contact surfaces","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"CRITICAL: No Critical House Fly Activity Observed","critical":true,"prompts":["Comments","House flies observed on food or inside pastry case","House flies observed on food contact surfaces","House flies observed in multiple areas of store","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"CRITICAL: No Critical Rodent Activity Observed","critical":true,"prompts":["Comments","Live rodent activity observed","Dead rodent observed","Chewed bags, nesting material or droppings observed","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"CRITICAL: No Critical Cockroach Activity Observed","critical":true,"prompts":["Comments","Cockroach(es) observed in BOH","Cockroach(es) observed in FOH","Cockroach(es) observed in lobby/customer area","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"CRITICAL: No Critical Ant Activity Observed","critical":true,"prompts":["Comments","Ant(s) observed on food or in the pastry case","Ant(s) observed on food contact surfaces","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MAJOR: No Major Fruit Fly Activity Observed","critical":false,"prompts":["Comments","Fruit flies observed in one area and not observed on food","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MAJOR: No Major House Fly Activity Observed","critical":false,"prompts":["Comments","House flies observed in one area and not observed on food","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MAJOR: No Major Ant Activity Observed","critical":false,"prompts":["Comments","Ants observed in cabinets or on counter tops and not observed on food or food contact surfaces","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MAJOR: Pest Entry Prevented","critical":false,"prompts":["Comments","Exterior doors are not rodent proof","Holes observed in wall and/or ceiling in FoH","Holes observed in wall and/or ceiling in BoH","Wall penetrations for incoming plumbing and/or electrical have gaps that are not sealed","Ceiling tiles missing or dislodged","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MAJOR: Pest Control Devices Placed Properly, If Present","critical":false,"prompts":["Comments","Pest control devices placed on or above food prep areas","Insect attractant light placed above food prep areas","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MINOR: No Minor Ant Activity Observed","critical":false,"prompts":["Comments","Ants observed on floor and not observed on food","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MINOR: Pest Harborage Prevented","critical":false,"prompts":["Standards Gap","Comments","Plumbing fixtures not properly sealed to the wall or countertop (note location)","Cabinetry/countertop not sealed to wall/splash guard juncture (note location)","Cabinetry/countertop horizontal gaps/joints not sealed (note location)","Wood rotted under stainless steel/countertop (note location)","Cabinets have water damage causing disintegration and rot (note location)","Countertop excessively worn/damaged/pitted (note location)","Cabinetry/Countertop has bare wood exposed (note location)","Trash not disposed of as needed indoors","Exterior pest harborage present around building","Exterior pest harborage present around dumpster area","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MINOR: Floors, Walls, Ceilings Clean and Cleanable","critical":false,"prompts":["Comments","Walls dirty in FoH","Walls dirty in BoH","Walls dirty in Restrooms","Wall tiles cracked/missing in FoH","Wall tiles cracked/missing in BoH","Wall tiles cracked/missing in Restrooms","Bare wood/drywall exposed in FoH","Bare wood/drywall exposed in BoH","Minor damage to walls/ceiling in FoH","Minor damage to walls/ceiling in BoH","Minor damage to walls/ceiling in Restrooms","Ceiling/vents dirty in FoH","Ceiling/vents dirty in BoH","Ceiling/vents dirty in Restrooms","Ceiling damaged in FoH","Ceiling damaged in BoH","Ceiling damaged in Restrooms","Grout lines dissolved/low (note location)","Cove molding damaged/missing (note location)","Floor tiles missing or loose (note location)","FoH Area floors/baseboards/drains not maintained clean","BoH area floors/baseboards/drains not maintained clean","Restroom Floor/wall junctures/baseboards/edges have dark encrusted build-up","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MINOR: Pest Reports on File","critical":false,"prompts":["Comments","No pest reports available","Where store has pest activity, this is not being managed and the store cannot evidence daily checks","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MINOR: Mop Area Maintained","critical":false,"prompts":["Comments","Mop sink area dirty","Mop stored in stagnant water","Mop not stored to facilitate proper drying","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MINOR: Plumbing Maintained","critical":false,"prompts":["Comments","Prep sink leaking in FoH","Prep sink leaking in BoH","Hand sink leaking in FoH","Hand sink leaking in BoH","Hand sink leaking in Restroom","Dish machine/three comp sink leaking","Restroom toilet/urinal leaking","Other sink/equipment leaking (note location)","Loose/damaged plumbing fixture (note location)","Is there a standard gap? (One or more X = \"Standard Gap\")"]}],"CONTAMINATION":[{"text":"CRITICAL: No Biohazard Event Present","critical":true,"prompts":["Comments","Biohazard event is present that cannot be contained within 25ft","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"CRITICAL: No Sewage Backup Present","critical":true,"prompts":["Comments","Sewage observed backing up into facility","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"CRITICAL: No Water Service Interruption","critical":true,"prompts":["Comments","Store is without drinking water","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"CRITICAL: Fire/Flood/Other Natural Disaster","critical":true,"prompts":["Comments","Fire/Flood/Other Natural Disaster taking place","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"CRITICAL: Partner Restroom Available","critical":true,"prompts":["Comments","Baristas have no access to a functioning restroom facility","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"CRITICAL: Hot Water Available","critical":true,"prompts":["Comments","Water temperature at warewashing sink is below 100°F/ 38°C","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"CRITICAL: Contamination of Food Not Observed","critical":true,"prompts":["Comments","Food or ice is contaminated with chemicals","Food or ice is contaminated physically","Manual warewashing, procedure not followed in the correct order","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"CRITICAL: No Food From Unapproved Sources","critical":true,"prompts":["Comments","Unapproved food item present intended for customer consumption","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"CRITICAL: TCS Product Within Quality Use-By Date","critical":true,"prompts":["Comments","TCS food found expired per manufacturers use-by date (note item & location)","TCS food removed from original packaging is missing barista written date code (note item & location)","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MAJOR: Food Items Stored Protected","critical":false,"prompts":["Comments","Food items not stored covered/protected","Food items stored in the restroom","Food items stored on the floor","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MAJOR: Food Contact Items Stored Protected","critical":false,"prompts":["Comments","Food contact items stored with visible dirt or food accumulation","Food contact items stored chipped/cracked/rusted or otherwise damage","Food contact items stored in the restroom","Food contact items stored on the floor","Food contact items stored under drain lines/dripping condensate","Food contact items stored on a dirty surface","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MAJOR: In-Use Food Contact Items Approved, Clean and Cleanable","critical":false,"prompts":["Comments","In-use utensils not maintained clean","In-use utensils chipped/cracked/rusted or otherwise damaged","Cutting board has visible build-up in grooves","Cutting board chipped/cracked or otherwise damaged","In-use Ice Scoops not maintained clean","In-use Ice Scoops chipped/cracked or otherwise damaged","In-use Ice Scoops not stored in a clean, designated container","In-use steaming pitchers have encrusted build up","In-use food contact items not from an approved source/food grade","Other In-use food contact items not maintained clean","Other In-use food contact items chipped/cracked/rusted or otherwise damaged","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MAJOR: In Use Food Contact Items Washed/Rinsed and Sanitized as Required","critical":false,"prompts":["Standards Gap","Comments","Required timer is not present, running or used properly","In-use food contact items are not washed/rinsed and sanitized at least every 2 hours","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MAJOR: Food Packages in Good Condition/Damaged Products Segregated","critical":false,"prompts":["Comments","Food containers/packages in poor condition or evidence of tampering","Damaged/recalled products are not stored separately and/or not labeled do not use","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MAJOR: Prepped, Ready-To-Eat or Refrigerated Foods Properly Labeled","critical":false,"prompts":["Comments","Foods/beverage taken out the original container are not name labeled","Foods/beverages repackaged onsite for retail missing required labeling","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MAJOR: TCS Product Within Quality Use-By Date","critical":false,"prompts":["Comments","TCS food found expired per manufacturers use-by date","TCS food removed from original packaging is missing barista written date code","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MAJOR: Ice Stored Protected","critical":false,"prompts":["Comments","FoH Ice bin lid is left open","BoH ice machine lid is left open","BoH ice bucket is not labeled for Ice Only and/or used for another purpose","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MAJOR: Ice Equipment Maintained Clean","critical":false,"prompts":["Comments","BoH Ice Machine drop plate has mold/slime build up","BoH Ice Machine bin has mold/slime build up","FoH Ice Bin has mold/slime build up","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MAJOR: Ice Equipment in Good Repair","critical":false,"prompts":["Comments","Ice Machine gasket damaged","Interior of Ice Machine chipped, cracked or otherwise damaged","FoH Ice Bin Lid cracked/split or otherwise damaged","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MAJOR: Chemicals Properly Labeled & Stored","critical":false,"prompts":["Comments","Chemical in unlabeled spray bottle/container","Chemical stored in a food container or single-use food container","Chemical label not readable","Sanitizer container not labeled","Chemicals not covered/sealed (excluding sanitizer buckets)","Chemicals stored next to or above food/food contact/single use items","Chemicals next to or above clean dishes","Chemicals on or above food preparation counters/sinks","Chemicals stored on/above clean drain board/sanitize basin of the 3 comp sink","Chemical stored on top of the dishwasher","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MAJOR: Dishwashing Machine/Three Compartment Sink Used/Set Up Properly","critical":false,"prompts":["Comments","Warewashing sink used for storage of food or single use items","Dirty dish storage has potential to contaminate clean dishes","Mechanical warewashing taking place with no detergent or liquid detergent less than 1 cm","Detergent is not available/used for manual warewashing, when required.","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MAJOR: Proper Wiping Cloth Storage/Procedure","critical":false,"prompts":["Comments","Clean wiping cloths stored with chemicals or dirty items","In-use wiping cloths left on counter, in/on sink, or on shelving","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MAJOR: Contamination of Food Not Observed","critical":false,"prompts":["Comments","Observed hair in contact with food","Observed hair in contact with ice","Observed dust in contact with food","Observed dust in contact with ice","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MAJOR: Produce Washed as Required (if present Food Transformation)","critical":false,"prompts":["Comments","Produce used and not washed"]},{"text":"MINOR: Equipment/Utensils/Smallwares Air-Dried Before Stacking","critical":false,"prompts":["Comments","Food contact items found stacked/nested while wet","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MINOR: Approved Scouring Pads in Use","critical":false,"prompts":["Comments","Soft sponge/eraser pad in dishwashing or food prep areas","Steel wool pads in dishwashing or food prep areas","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MINOR: Non-TCS Foods Not Expired","critical":false,"prompts":["Comments","Non-TCS food found without expiration date","Non-TCS food found expired per use by date","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MINOR: Refrigeration Units Clean and Cleanable","critical":false,"prompts":["Comments","BoH Refrigerator/Freezer gasket dirty","BoH Refrigerator/Freezer shelves dirty","BoH Refrigerator/Freezer fan guards dirty","BoH Refrigerator/Freezer interior dirty","BoH Refrigerator/Freezer exterior dirty","FoH Refrigerator/Freezer gaskets dirty","FoH Refrigerator/Freezer shelves dirty","FoH Refrigerator/Freezer fan guards dirty","FoH Refrigerator/Freezer interior dirty","FoH Refrigerator/Freezer exterior dirty","Refrigerator/Freezer shelving not secure","Refrigerator/Freezer shelving notably rusted","Ice build up observed inside freezer","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MINOR: Sinks and Dish Area Maintained Clean","critical":false,"prompts":["Comments","FoH handsink dirty","BoH handsink dirty","Restroom handsink dirty","FoH prep sink dirty","BoH prep sink dirty","FoH dump sink dirty","BoH dump sink dirty","Dish sink dirty","Dish sink faucet/sprayer dirty","Shelving above dish sink dirty","Dishmachine dirty","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MINOR: Cabinetry/Counter Tops Maintained Clean","critical":false,"prompts":["Comments","Countertops dirty","Cabinets dirty in FoH","Cabinets dirty in BoH","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MINOR: Other Equipment Clean and Cleanable","critical":false,"prompts":["Comments","Oven dirty or damaged","Ventilation hood dirty or damaged","BoH Metro Shelving/Storage units dirty or damaged","Espresso machine dirty or damaged","Brewed coffee machine/clover dirty or damaged","Blender pitcher rinser dirty or damaged","Blender housing/shroud dirty or damaged","Ice machine exterior dirty or damaged","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MINOR: Condiment Bar Maintained Clean","critical":false,"prompts":["Comments","Interior of condiment stand dirty","Exterior of the condiment stand dirty","Encrusted build up in sugar/sweetener dispenser","Encrusted build up under napkin dispenser/trash ring","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MINOR: Lighting Maintained and Properly Shielded","critical":false,"prompts":["Comments","Lighting dirty in FoH","Lighting dirty in BoH","Lighting dirty in Restroom","Light(s) out/missing in FoH","Light(s) out/missing in BoH","Light(s) out/missing in Restroom","Light(s) out/missing in Refrigerator/Freezer unit","Light(s) not properly shielded/shatter-proof in FoH","Light(s) not properly shielded/shatter-proof in BoH","Light(s) not properly shielded/shatter-proof in Refrigerator/Freezer unit","Is there a standard gap? (One or more X = \"Standard Gap\")"]},{"text":"MINOR: Restrooms Clean and Cleanable","critical":false,"prompts":["Handrails dirty or in poor repair","Toilet(s) dirty","No toilet paper available","Toilet paper not loaded into dispenser","Baby changing table/unit dirty","Doors dirty","Is there a standard gap? (One or more X = \"Standard Gap\")","INFO: For EQUITY, cleaning cards are available online. No printed material in stores.","Comments","Printed material in stores","10% Multiple Cleaning Issues (there are no collective cleaning issues which could impact an FHR rating)"]}]}},"health_safety_aug":{"scoring":"critical:-10pts; major:-3pts; minor:-3pts","sections":{"GENERAL":[{"text":"Are controls over slip/trip/fall hazards satisfactory (high risk)","critical":true,"prompts":["A trailing electric cable is present creating a trip hazard","Doormat in poor condition, not flush with floor surface","Items are stored in a manner which creates a tripping hazard","Mops/brooms are not stored on brackets, resulting in a trip hazard","Pooled water/spillages are on the floor","The ‘wet floor’ warning sign is not being used for spillages / wet floors or for cleaning activities","The flooring is in poor repair causing a tripping hazard","The floor was being mopped during open hours allowing for the risk of slip and falls (Spills can be cleaned up but the floor area of the spill must be dried with paper towel)","External path/walkways/entrance to store (Starbucks responsibility) is in poor repair causing a trip hazard","The stair handrail is not in good condition","A stair handrail is not present","The stair nosing's are not in good condition","The stairs are not adequately lit","Transition surround strip to mats forms trip hazard with floor surface /doormat in poor condition, not flush with floor surface","Partner footwear observed to be in poor condition or not to Starbucks requirements","Risk of persons/materials falling from height","There is height difference between different floor areas which is not clearly visible and is creating a trip/fall hazard","Other"]},{"text":"Are controls over slip/trip/fall hazards satisfactory (low risk)","major":true,"prompts":["Cardboard is being used on the floor rather than cleaning up spillages","Changes in floor height/level are not adequately marked/visible","Minimum of 1 wet floor sign not available in store","Other"]},{"text":"Are controls over electrical hazards satisfactory (high risk)","critical":true,"prompts":["Damaged electrical cables are in use","Damaged electrical connections to equipment noted","Damaged electrical equipment is in use","Damaged electrical sockets are in use (FOH)","Damaged electrical sockets are in use (BOH)","Damaged electrical sockets noted (FOH) but not in use","Damaged electrical socket noted (BOH) but not in use","Extension lead is in use (EQUITY no extension leads other than IT approved use in Techstack and behind POS) (LICENSED must be approved by Competent Person and to FPA standards, PAT, Short Lead and secured in place)","Plug/block adapter extension in use","Damaged electrical switches are in use","Unapproved electrical equipment in use (e.g. fan heaters, desk fans)","Other"]},{"text":"Are controls over electrical hazards satisfactory (low risk)","major":true,"prompts":["Electrical items such as the microwave oven, etc. have not been PAT tested (in the last 12 months)","Door to electrical cupboard/electrical intake not closed and locked","Damaged electrical sockets are in use (FOH) (only low risk where evidence this has been reported)","Other"]},{"text":"Are controls over fire hazards satisfactory (high risk)","critical":true,"prompts":["Fire Extinguishers - Several fire extinguishers are missing","Fire Extinguishers - Fire extinguisher is depressurised","Fire Extinguishers - Access to fire extinguishers is hindered or obstructed","Fire Doors - Fire doors are not closed and/or are propped open (specify what is used to prop them)","Fire Doors - Fire doors are noticably damaged","Emergency Escape Routes - Emergency escape route is obstructed or not fully accessible (internal/external)","Emergency Escape Routes - Emergency escape route is locked","Emergency Escape Routes - The escape route creates a hazard during evacuation (e.g., drop from height, poor escape ladder condition)","Emergency Escape Routes - Emergency release mechanism on the final exit door is defective","Emergency Lighting - Emergency lighting is defective or non-operational","Fire Detection & Alarm Systems - Smoke detectors and/or sprinkler heads are blocked or broken","Fire Detection & Alarm Systems - Access to the 'break glass' fire alarm call point is obstructed","The fire alarm service records are not available or update to date (minimum 12 monthly cycle). Applicable Where the store is responsible for managing the servicing of the fire alarm and records are held on site. NA in EQUITY","Combustible Materials - Combustible materials present in high-risk areas (e.g., electrical cupboard, boiler room, exposed motor on water filtration system)","Other"]},{"text":"Are controls over fire hazards satisfactory (low risk)","major":true,"prompts":["Parchment paper is being left in the  oven, must be changed after each use","The fire extinguisher pin/tamper tag is missing","The fire extinguisher signage is missing","All manual call points (MCP) have not been numbered in line with digital DRN instructions","Other"]},{"text":"Are smoking related hazard control (high risk)","critical":true,"prompts":["No metal bin/suitable container available and in use to collect cigarette butts and ash tray available in outdoor customer area","Partners observed smoking in a fire escape route or behind to / close to a fire exit \nNo metal bin/suitable container available and in use to collect cigarette butts and ash tray available in outdoor customer area"]},{"text":"Controls to prevent Partners charging E-bikes/Scooters in store satisfactory (high risk)","critical":true,"prompts":["Partners observed charging E-bikes / Scooters in store"]},{"text":"Are controls over equipment safety satisfactory (high risk)","critical":true,"prompts":["A Barista was using a stepladder or other means other than elephants foot to work at height","A supervisor/Manager was using an unapproved piece of equipment to work at height","All umbrellas are not secured to the base at all times","Damaged baby change unit in use","Damaged blender is in use","Damaged microwave in use","Damaged Coffee Grinder is in use","Damaged ice machine in use","Damaged Columbia shuttle/Bunn brewer  is in use","Damaged Espresso Coffee Machine is in use","Damaged salt spreader in use","Damaged fridge/freezer/display case in use","Damaged trolley in use","Damaged temporary heating in place","Damaged Baby highchairs are in use","Damaged straps to baby highchairs and/or baby change facility","HandySitt highchairs (where approved for use) are being fitted to seats and left unused in the customer area","Damaged Turbo Chef/ Merry Chef is in use","Exterior umbrellas are not being taken down when required by weather conditions","Exterior furniture is not being removed externally when required by weather conditions - barrier, banners, A-Boards, tables, chairs","Exterior furniture is damaged and remains in use - barrier, banners, A Boards, tables, chairs, umbrella","Storage equipment (racking units/shelves) is not being used correctly/overloaded","Storage equipment (racking units/shelves) is defective","Loose light fittings not made safe","The emergency release mechanism on the walk-in chiller door is defective","The kick stool/elephants foot is not in good condition, wheels not running freely and is not locked down, where this option is possible.","The ladders are not in good condition","The Starbucks compactor was not in a good condition","Landlords equipment being used by Starbucks partners was not in a good condition i.e. compactor","Unapproved equipment is in use (non electrical)","Equipment is not being used correctly/according to training - specify in detail","Hot water on sinks without mixer taps is excessive in temperature which allows for the risk of burns and scalding","Other"]},{"text":"Are controls over equipment safety satisfactory (low risk)","major":true,"prompts":["The ladders were noted to be stored inappropriately and should be stored safely","Warning labels are missing from highchairs (Magrini - Two labels - back of chair, non seat side and seat side, Helo - One label - back of chair, non seat side)","Warning labels are missing from the baby change unit (NB these may be embossed on the unit)","Store torch not available and in working order (Emergency Health & Safety Procedures)","Step ladder check card missing (EQUITY only)","Other"]},{"text":"Does the Store environment – cabinetry/furniture/casework/ceiling allow for a safe environment (high risk)","critical":true,"prompts":["Cabinetry in poor repair causing safety issue","Furniture in poor repair causing safety issue","Casework in poor repair causing safety issue","Ceiling in poor repair causing safety issue","Other part of store environment causing safety issue – specify"]},{"text":"Are first aid materials satisfactory","major":true,"prompts":["A first aid box is not available","Out of date first aid materials are present","The first aid box needs to be restocked","Unapproved materials are present in the first aid box","Other"]},{"text":"Does the store have asbestos and does the store partners know where the asbestos is","major":true,"prompts":["The Asbestos Containing Material has become damaged and has not been reported","The Asbestos Containing Material should be signed with appropriate warning label but it is missing / damaged","Other"]},{"text":"Are controls over manual handling hazards satisfactory","major":true,"prompts":["Heavy items are being stored above head height","Heavy items are being stored on the floor","Items are being stored at high level and are at risk of falling","Partners are being observed climbing on equipment/worktops to access items at high level","Partners handling heavy items and not following good manual handling practices","Partners moving items up/down stairs and not following good manual handling practices","Partners moving items via trolley that is in poor repair or inappropriate for the task","Partners moving items via an unapproved trolley (without evidence they have raised the issue with Starbucks Safety Team or LICENSED Competent person )","Other"]},{"text":"Are controls over hazardous substances satisfactory (high risk)","critical":true,"prompts":["Chemical spray bottles are not labelled","Chemicals are not being stored upright","Chemicals have been decanted into incorrect product container","Chemical dispense unit incorrectly positioned and therefore creating a safety issue - risk of splash from chemical","Dishwasher chemicals (in use) do not have bayonet tubing connectors (LICENSED)","Dishwasher chemicals (in use) do not have safe dose connectors (EQUITY) (Zenith Sealed Chemicals)","Leaking chemicals have not been removed/spillages cleared up","Storage of chemicals is creating a hazard - fire risk, manual handling, chemical splash to face/eyes","Non-approved chemicals are in use/available (Water based paints can be stored in store for Facilities use, DO NOT store in electrical cupboard)","The cleaning chemical container lid is not secured during storage or is missing","Inventory of chemicals has not been completed - LICENSED","Other"]},{"text":"Are controls over hazardous substances satisfactory (low risk)","major":true,"prompts":["Containers of chemicals are being stored directly on top of one another","The cleaning cards are not available (Stores using Zenith only)","Other"]},{"text":"Is the personal protective equipment satisfactory (high risk)","critical":true,"prompts":["Disposable apron/gloves are not available or are not being used","Disposable masks are not available or are not being used (where required dependant on Chemicals used and for Bio Hazards)","Gauntlet gloves are in need of replacement","Gauntlet gloves are not available/used","Goggles are not available or are not being used (where required dependant on Chemicals used)","The goggles are in need of replacement","PPE is not being worn by Partners","Washing-up/rubber gloves are not available or are not being used","Sharp/cut proof gloves are not available for litter picking (DO NOT double mark if missing for litter picking also)","HI Vis available for Drive Thru (Don't double mark if missing for litter picking also)","Other"]},{"text":"Is the personal protective equipment satisfactory (low risk)?","major":true,"prompts":["PPE is contaminated by chemicals, other substance, in poor cleanliness, poor repair","Starbucks fleeces for kiosk partners are not available","Other"]},{"text":"Management of the store know where to find the Health & Safety Manual (demonstrate)","major":true,"prompts":["Sections of the Health and Safety Manual have not been completed EQUITY (Navitas Online) or LICENSED (Hard Copy/Digital) Sections 1 - 21","The health and Safety Manual is not in order (Licensing only if hard copy)","The Health and Safety Manual is not available in the store (Licensing only hard copy/digital)","The Health and Safety Manual is not the current version (Licensing only)","A Supervisor or Manager cannot log onto the online H&S system/manual and navigate the Health and Safety Manual to demonstrate understanding of the system to the auditor (Licensed/Equity - Digital versions)","The manager/supervisor is using another user ID and password to access the Navitas system (Equity only)","Other"]},{"text":"Accident records (Incident Report Forms) are in use including investigation records - Store to show Auditor where they are storing completed IRF forms","major":true,"prompts":["Corrective actions have not been completed in relation to an accident, near miss or incident","Incident Report Forms are not fully completed/poor completion (Licensed)","The Incident Report Forms do not identify causes and remedial actions (Licensed)","EQUITY Navitas IRF system. Licensing -  iMeg online system (Euro Garages) or other online systems if paper version are not used. Paper IRF forms must be filed in secure location such as Health & Safety Manual record section","Most current version of IRF form in use (V June 2018) (Licensing)","EQUITY Unsubmitted IRF's. Auditors to check under construction file on Navitas for any unsubmitted IRF's - Minor within 48hrs - Serious within 24hrs - Critical within 12hrs","EQUITY Investigations not being completed. Auditors to check investigations on Navitas in investigations file to identify any responses not completed by the store. Responses should be provided a maximum of 4 weeks after the date requested.","Other"]},{"text":"The health and safety checks are being completed in the Digital Duty Roster Notebook (high risk)","critical":true,"prompts":["All partners have not participated in a fire drill within the last 6 months","The fire drill has not been recorded in the Q2 & Q4 Duty Roster Notebook","Contractor/visitor attendance log not being completed (marks deducted where no action noted by management team)","The daily checks are not being completed","The monthly checks are not being completed","The quarterly checks are not being completed","The quarterly health and safety self audit has not been completed (Copies maybe stored outside of DRN)","There are gaps in the records","Call points for the fire alarm test are not being rotated with a different call point used weekly","The Emergency Guidelines pack and red grab bag is missing (EQUITY only)","Contractor risk assessment section has not been completed","Store specific checks are not being completed (where applicable)","Additional forms have been created and completed on DFS as required","Checks have been completed in advance","Corrective actions not recorded","Other"]},{"text":"All risk assessments (ONLINE EQUITY /PRINTED/DIGITAL LICENSED) have been completed, marked off and are accessable (high risk)","critical":true,"prompts":["Drive Thru specific risk assessments have not been completed (Drive Thru stores only) in full","Generic risk assessments have not been completed in full","The risk assessment templates are being signed off for hazards and controls that are not applicable to the store","The Starbucks printed or digital risk assessments are out of date (Licensed). Must be completed within 1 year and 1 month of last review.","The Starbucks digital risk assessments have not been completed on Navitas. (Equity). Must be completed within 1 year and 1 month of last review.","All other non Starbucks risk assessments are out of date and have not been reviewed within 1 year and 1 month of last review.","The risk assessments do not accurately reflect the hazards and controls that are in the store, not personalised to store specific hazard/s","Partners with Special Needs RA is not being completed or reviewed, where required","The Young Persons risk assessment where applicable has have not been completed or reviewed, where required","The Expectant and New Mothers risk assessment where applicable has not been completed or reviewed for partners where required","Other"]},{"text":"The electrical records are satisfactory (high risk)","critical":true,"prompts":["Electrical appliances that failed the PAT test are in use in the store","The annual portable appliance testing is overdue (NB Soul Coffee 18 monthly)","Portable appliance stickers are missing to equipment - please specify","Fixed wiring installation inspection certificate (5 yearly) not available (LICENSED stores only, where held in store 3/5 yearly)","Fixed wiring installation inspection certificate (5 yearly) not satisfactory (LICENSED stores only, where held in store 3/5 yearly)","The emergency lighting servicing records are not available/satisfactory (LICENSED stores only where held in store - 12 monthly checks cycle)","Other"]},{"text":"The electrical records are satisfactory (low risk)","major":true,"prompts":["The date of the last portable appliance testing date has not been entered into the manual","Other"]},{"text":"The fire risk assessment is available and marked off","major":true,"prompts":["The Fire Risk Assessment is not available (LICENSED ONLY - yearly)","The fire safety review report is not available (LICENSING only where applicable)","The yearly fire safety review has not been progressed and marked off (EQUITY - 12 month cycle)","LICENSING The actions arising from the fire risk assessment/fire safety review have not been progressed and marked off","The review date must be available on the fire risk assessment report","Other"]},{"text":"The hazardous substances safety data sheets and risk assessments are satisfactory (high risk)","critical":true,"prompts":["The COSHH risk assessments are not available (LICENSED)","The COSHH risk assessments have not been fully reviewed (Equity). 1 year and 1 month from last review.","The COSHH risk assessments have not been fully completed","The Safety Data Sheets are not available (LICENSED)","Partners were not able to find the COSHH risk assessments","Other"]},{"text":"The manual handling risk assessments are satisfactory (high risk)","critical":true,"prompts":["The manual handling risk assessment does not accurately reflect the hazards and controls that are in the store","The manual handling risk assessment are not available (Licensed)","The partner specific manual handling risk assessment has not been completed or reviewed where required.","The manual handling risk assessment template is not complete","Other"]},{"text":"Are the correct health and safety signs and documents displayed(low risk)","major":true,"prompts":["The chemical store cupboard is not signed","The Current Employer's Liability Insurance Certificate is not displayed","The fire alarm call point sign is missing","The current Health and Safety Policy statement HSE H&S Law Poster is not displayed with correct details as outlined in the H&S manual","The list of trained First Aiders at Work is not displayed","The Current signed Health and Safety Policy statement is not displayed","Other"]},{"text":"Are the correct health and safety signs and documents displayed (High risk)","critical":true,"prompts":["The electrical warning sign is not displayed on the electrics cupboard/room door","The fire evacuation procedure is not displayed on the partner noticeboard","Electrical panel access rules signage displayed on front cover of fuse board (EQUITY only)","Other"]},{"text":"General health and safety training is completed and recorded (high risk)","critical":true,"prompts":["100% completion of Getting Started on Attensi training platform by the end of Day one for all partners","The PIC is unable to provide access to all training records on request","Supervisors/Supervisor in training are running shifts alone when they have not completed the supervisor training on the Attensi platform and skills game to a minimum of 4 stars","All store partners are not visible on the Attensi training dashboard Auditor to cross reference the Rota","All Partners can be found on Dashboard (including those that have been transferred). Auditor to compare Dashboard to Store schedule to confirm all partners are live on Dashboard","Store Manager Training - the workshop certificate of attendance OR Attensi verification completion is not available","Training records are not available on the Dashboard, within 7 days of partners being transferred internally","Other"]},{"text":"Partner specific health and safety training is completed and recorded (high risk)","critical":true,"prompts":["Where young persons are employed, the manual has not been updated to include the names of the designated work buddies for each young person. LICENSED Only","Where young persons are employed, the risk assessment – training programme document has not been updated for each young person","Partner refresher training has been completed within the deadlines stated by the Support Centre","Other"]},{"text":"Partner specific health and safety training is completed and recorded (low risk)","major":true,"prompts":["Appointed Barista has not completed the Supervisor/ Manager fire refresher 2021 training","Appointed Barista has not had a minimum of one years service with Starbucks or is a Trainee Supervisor","Other"]},{"text":"Are arrangements for accessibility satisfactory (high risk)","critical":true,"prompts":["The disabled access ramp is not available where required","The disabled alarm cord in the toilets is not working/accessible. There must be one cord with two pulls spaced 10cm from the floor and 80- 100cms from the floor","Disabled customers cannot access the toilet due to other equipment/bins being in the way such as sanitary bins/nappy bins","The disabled access bell where provided is not working outside the store","Other"]},{"text":"Safety at the Drive Thru satisfactory","major":true,"prompts":["Drive Thru exterior hazards present (Drive Thru stores only)","Drive thru lane not in good repair","External lighting not in good working order","Partners do not wear a high-viz when checking the drive thru and use the designated path","Partners are observed directing traffic within the car park or Drive Thru lane","Serving window is not closed when there are no customers present","The serving window is not clear of any additional items e.g. impulse items, sugars, napkins, stirrers","Store does not have 'no admittance' signs or cone for use when the Drive Thru lane is closed","Store does not have a supply of salt/grit for cold/icy/snowy weather","Walkways around the store have not been cleared and salted/ gritted when weather conditions are cold/icy/snowy","Litter picking observed in the Drive Thru lane when the lane is open","Partners do not remain visible to store Partners when litter picking alone or two partners are not carrying out the task together when not visible","Partners are picking litter that is not visible (no reaching in to bushes etc)"]},{"text":"All Drive Thru signage is present and in good condition","major":true,"prompts":["No give way sign at the exit of the car park","Inadequate directional signage","Other"]},{"text":"All PPE for litter picking is available, in good repair and being used","major":true,"prompts":["No heavy duty gloves","No High Viz","No litter pick stick","No bin hoop (EQUITY only)"]},{"text":"Are there any other hazards (high risk)","critical":true,"prompts":["Other"]},{"text":"Are there any other hazards (low risk)","major":true,"prompts":["Other"]},{"text":"Are daily lift checks being completed in the DRN","major":true,"prompts":["Door runner checks not completed in DRN","General condition (including control panel, emergency light, light, doors, floors, walls) checks not completed in DRN","Checks to confirm lift room is locked are not completed in DRN","Evacuation chair availability and condition checks not completed in DRN - where applicable","Store does not have adequate number of Partners trained to use the evac chair (min two per shift)"]},{"text":"Are weekly/monthly lift checks being completed in the DRN","major":true,"prompts":["Lift key and lift room key checks not being completed (Lift keys removed from store in Equity, only lift room available)","Emergency lift signage checks not completed in DRN","Emergency lift blocking off barrier checks not completed in DRN","Signage checks not being completed in DRN"]},{"text":"Have all the lift sections in the manual been completed - Hard/Digital Copy LICENSED, Navitas - EQUITY","major":true,"prompts":["Details store lift form - Navitas (EQUITY) Page 1 and 2 (Licensed)  in section 15 of the health and safety manual has not been completed","Lift support equipment location form - Navitas (EQUITY) and (Licensed) in section 15 of the health and safety manual has not been completed","Lift usage procedure form - Navitas (SBX control lift)  (Licensed - Paper form/Digital) not completed","Lift usage procedure form - Navitas (Landlord controlled lift) (Licensed - Paper form/Digital) not completed"]},{"text":"Is the lift signage available","major":true,"prompts":["\"In the event of a fire'' signage missing/in poor repair","\"Danger do not place your head in the lift cavity'' signage missing/in poor repair","\"Warning do not exceed capacity\" signage missing/in poor repair","\"Out of Order\" signage missing/in poor repair","\"No passengers to ride this lift\" signage missing/in poor repair","Electric scooter signage prohibition signage in place (EQUITY)"]},{"text":"Is the lift signage displayed to the correct standard","major":true,"prompts":["\"In the event of a fire'' signage not to display standards","\"Danger do not place your head in the lift cavity'' signage not to display standards","\"Warning do not exceed capacity\" signage not to display standards","\"Out of Order\" signage not to display standards","\"No passengers to ride this lift\" signage not to display standards"]},{"text":"Has the 'manager responsibilities for lifts' document been completed (Starbucks Operated and Non Starbucks Operated - store used lifts)","major":true,"prompts":["The 'manager responsibilities for lifts' document has not been completed","The district manager/ operations manager or manager have not signed off the 'manager responsibilities for lifts' document","The manager responsibilities for lifts document is missing"]},{"text":"Have the 'Supervisors responsibilities for lifts' documents been completed (Starbucks Operated and Non Starbucks Operated - store used lifts)","major":true,"prompts":["The 'supervisors responsibilities for lifts' document have not been completed for all supervisors","The supervisor responsibilities for lifts document has not been signed off by the store manager or the supervisor","The supervisor responsibilities for lifts document is missing - specify"]},{"text":"Have the Starbucks Lift Training records been completed for all partners (Starbucks Operated and Non Starbucks Operated - store used lifts)","major":true,"prompts":["All partners have not completed the lift training records including the quiz and sign off sheet (H&S section 15)","There are incorrectly marked/completed answers to the partner quiz","The manager or partner have not signed off the partner lift training record - specify"]},{"text":"Partner knowledge regarding the use of lifts adequate","major":true,"prompts":["Person in charge has insufficient knowledge of lift emergency procedures (Starbucks operated  and Non Starbucks operated - store used lifts)","Person in charge has insufficient knowledge of lift operating procedures (Starbucks operated  and Non Starbucks operated - store used lifts)","Barista on shift has insufficient knowledge of lift emergency procedures (Starbucks operated  and Non Starbucks operated - store used lifts)","Barista on shift has insufficient knowledge of lift operating procedures (Starbucks operated  and Non Starbucks operated - store used lifts)","Person in charge cannot locate the emergency lift signage (e.g. out of order signs) N/A TO QUEENSWAY"]},{"text":"Is there any debris caught in the door runner preventing the door to close","major":true,"prompts":["Debris is caught in the door runner"]},{"text":"Is the lift's general condition in good repair","major":true,"prompts":["Lift is not in good repair (obvious signs of damage, state damage)"]},{"text":"Is the lift room locked","major":true,"prompts":["Lift room is unlocked"]},{"text":"Is the evacuation chair and evacuation ramp available and in good repair? (If applicable)","major":true,"prompts":["Evacuation chair/ramp is not available/is in poor repair","No partner on shift who is trained to operate evacuation chair"]},{"text":"Are the lift/lift room keys stored correctly","major":true,"prompts":["Lift keys are not stored in the safe in a signed, sealed, and date labelled envelope (Equity only keys in store are lift room keys, lift keys have been removed and provided to Facilities)","Manager/Person in Charge cannot locate lift keys"]},{"text":"Is the emergency lift barrier available","major":true,"prompts":["The emergency lift barrier is not available/is in poor repair"]},{"text":"Has the lift risk assessment been completed for the store","major":true,"prompts":["The risk assessment has been marked as non-applicable, when it should apply - specify which risk assessment"]},{"text":"Is the lift risk assessment site specific","major":true,"prompts":["The risk assessment does not accurately reflect all the risks in this store - specify which risk assessment","The risk assessment has not been adjusted/adapted to the site - specify which risk assessment"]},{"text":"Controls over burns/scalds are satisfactory (high risk)","critical":true,"prompts":["Partner knowledge on how to apply first aid to scald/ burn insufficient (Person in charge to answer this successfully)","Cup lids sip hole in line with cup seam","Cup lids are not securely fastened to cups before hand off to customer","Hot drinks served in disposable cups are not fitted with a sleeve fitted (Only water based drinks (Tea, Americano) and all venti sized drinks - double cup if sleeve not available)","Partner steaming milk not in line with RA controls e.g. leaving unsupervised / steaming thermometer not used for kids beverages","Partner passing cup into Customers hand (not in line with RA)","Kids beverages handed directly to child, not parent/guardian (not in line with the RA)","Other"]},{"text":"Controls over sharps and syringes (high risk)","critical":true,"prompts":["Store has a recognised problem with syringes and is not following the sharps procedure and a sharps kit is not available (heavy duty gloves/gauntlets, syringe tongs, dedicated sharps container)","Stores are not following the safety procedures for handling broken glass, china and smallwares to ensure there is no risk of injury"]},{"text":"Controls over knives are satisfactory (high risk)","critical":true,"prompts":["Partners are not handling knives safely, in line with company policy","Knives left in sinks waiting to be cleaned"]},{"text":"Safety controls over food preparation activities are satisfactory (high risk)","critical":true,"prompts":["Baking and preparation is creating hazards for other tasks","Partners do not stand back when opening the oven door to allow steam to escape","Wheels on preparation tables are not locked in place when in use","Water is being used to cool the oven","Hot trays carried along the bar line or from the bar to back of house","Steaming pitcher for pastry use spoon is over filled (tall line) or filled with hot water","Unox oven is being used to cook unapproved products","Cleaning is taking place before the oven and equipment has sufficiently cooled (1hr cooling time)","Partners using the Unox oven unsafely and door being fully opened without warning other partners prior","Trays not being left for sufficient time to cool before moving","Hot trays not put on shelving below Unox oven or on pastry cooling trolley after use","Partners are not moving bespoke pastry trollies safely around store and informing other partners/customers","Pastry trollies are being overloaded obscuring visibility","Protective oven gloves are not available/not in good condition/not used"]},{"text":"Partner Knowledge (Barista)","major":true,"prompts":["Partner do not know that it is unacceptable to prop a fire door open in any circumstances","Partners do not know how to report all types of accidents and near misses on an IRF via first aider","Partners do not know the correct lifting procedure","Partners do not know that the passengers lift should be used for people only not for refuse or goods deliveries","Partners do not know the correct procedure if an item of electrical equipment trips","Partners have not been shown the full fire escape route so that they know where to go in the event of fire where the stores escape route goes though another premises","Partners have not been trained in how to use the trolley in store where present","Partners know what action to take should they damage Asbestos containing materials in store","Partners know to report legionella issues such as warm water cold tap, cold water hot tap, discoloured water, foul smelling water","Partners do not know what to do if they spot a spillage on the floor"]},{"text":"Partner Knowledge (Supervisor/PIC)","major":true,"prompts":["The PIC should have a better knowledge of the accident notification procedure, completion of IRF, including how to submit \nIRF's (Licensing where applicble RIDDOR process)","The PIC should have a better knowledge of safe lifting techniques \nOther","The PIC should have a better knowledge of fire alarm and emergency lighting testing procedures","The PIC should have a better knowledge of the Health and Safety 'How to' cards and knows where to find them how to cards","The PIC should have a better knowledge of the correct procedure for cleaning the Bunn Brewer and the Columbia Shuttle","The PIC should have better knowledge of emergency evacuation procedures","The PIC should have better knowledge of their role and responsibilities - see H&S manual section","The PIC should have better knowledge of the completion of risk assessments","The PIC should have a better knowledge of the broken glass procedure from the food safety manual and actions to avoid risk \nof cuts","Supervisors do not know how to report fire alarm faults to the Safety and Risk via the Navitas IRF (Equity)","Supervisors do not know how to report fire alarm faults to the Safety and Risk via the Navitas IRF (Equity)","Supervisors incorrectly state that a fire door can be propped open and are not aware that Safety and Risk can assist with fitting door holders connected to the fire alarm","Supervisors cannot explain what to do if a fire is discovered in the store","Supervisors do not know what to do if the fire alarm is not working","Supervisors do not know what information needs to be provided to the Fire Brigade on arrival.","Partners cannot demonstrate a good understanding of the key preventative measures stipulated in the risk assessments"]},{"text":"Legionella Risk Assessment is available in store and actions completed (high risk)","critical":true,"prompts":["The legionella risk assessment was not available in store. Applicable where the risk assessment is held at store level. Not applicable to Equity as held centrally. Allow 1 months grace from when audit completed.","Actions were not completed on the risk assessment (Exception for any actions still within allocated deadline)."]},{"text":"Multiple Risk Issue Questions - High Risk 10 point questions - Additional 10 Penalty deduction if one of these questions has more than two fails.","major":true},{"text":"Critical Risk Issue Questions - Additional 10 Penalty deduction if critical risk from locked fire exit","major":true},{"text":"Observation (non‑scoring)","note":true,"nonScoring":true}],"MULTI_RISK (High Risk 10pt each + extra if >2)":[{"text":"Two or more high risk slip/trip/fall NC's","critical":true,"prompts":["Tick if true: Two or more high risk slip/trip/fall NC's (>=2 NCs in Slip/Trip/Fall)"]},{"text":"Additional 10pt penalty — any single Slip/Trip/Fall area has >2 NCs","critical":true,"prompts":["Tick if true: Slip/Trip/Fall >2 NCs in a single area (extra -10)"]},{"text":"Two or more high risk electrical NC's","critical":true,"prompts":["Tick if true: Two or more high risk electrical NC's (>=2 NCs in Electrical)"]},{"text":"Additional 10pt penalty — any single Electrical area has >2 NCs","critical":true,"prompts":["Tick if true: Electrical >2 NCs in a single area (extra -10)"]},{"text":"Two or more high risk fire safety NC's","critical":true,"prompts":["Tick if true: Two or more high risk fire safety NC's (>=2 NCs in Fire Safety)"]},{"text":"Additional 10pt penalty — any single Fire Safety area has >2 NCs","critical":true,"prompts":["Tick if true: Fire Safety >2 NCs in a single area (extra -10)"]},{"text":"Two or more high risk equipment safety NC's","critical":true,"prompts":["Tick if true: Two or more high risk equipment safety NC's (>=2 NCs in Equipment Safety)"]},{"text":"Additional 10pt penalty — any single Equipment Safety area has >2 NCs","critical":true,"prompts":["Tick if true: Equipment Safety >2 NCs in a single area (extra -10)"]},{"text":"Two or more hazardous substances NC's","critical":true,"prompts":["Tick if true: Two or more hazardous substances NC's (>=2 NCs in Hazardous Substances)"]},{"text":"Additional 10pt penalty — any single Hazardous Substances area has >2 NCs","critical":true,"prompts":["Tick if true: Hazardous Substances >2 NCs in a single area (extra -10)"]},{"text":"Two or more PPE NC's","critical":true,"prompts":["Tick if true: Two or more PPE NC's (>=2 NCs in PPE)"]},{"text":"Additional 10pt penalty — any single PPE area has >2 NCs","critical":true,"prompts":["Tick if true: PPE >2 NCs in a single area (extra -10)"]},{"text":"Two or more DRN NC's","critical":true,"prompts":["Tick if true: Two or more DRN NC's (>=2 NCs in DRN)"]},{"text":"Additional 10pt penalty — any single DRN area has >2 NCs","critical":true,"prompts":["Tick if true: DRN >2 NCs in a single area (extra -10)"]},{"text":"Two or more Fire Risk assessment NC's","critical":true,"prompts":["Tick if true: Two or more Fire Risk assessment NC's (>=2 NCs in Fire Risk Assessment)"]},{"text":"Additional 10pt penalty — any single Fire Risk Assessment area has >2 NCs","critical":true,"prompts":["Tick if true: Fire Risk Assessment >2 NCs in a single area (extra -10)"]},{"text":"Two or more Any other hazards NC's","critical":true,"prompts":["Tick if true: Two or more Any other hazards NC's (>=2 NCs in Other Hazards)"]},{"text":"Additional 10pt penalty — any single Other Hazards area has >2 NCs","critical":true,"prompts":["Tick if true: Other Hazards >2 NCs in a single area (extra -10)"]},{"text":"Two or more Lift NC's","critical":true,"prompts":["Tick if true: Two or more Lift NC's (>=2 NCs in Lift)"]},{"text":"Additional 10pt penalty — any single Lift area has >2 NCs","critical":true,"prompts":["Tick if true: Lift >2 NCs in a single area (extra -10)"]},{"text":"Legionella Two or more NC's","critical":true,"prompts":["Tick if true: Legionella Two or more NC's (>=2 NCs in Legionella)"]},{"text":"Additional 10pt penalty — any single Legionella area has >2 NCs","critical":true,"prompts":["Tick if true: Legionella >2 NCs in a single area (extra -10)"]}]}},"allergen_assessment":{"scoring":"critical:-10pts,-10pct; major:-5pts; minor:-2pts","sections":{"ALLERGEN":[{"text":"CRITICAL: Partners in store understand the 2 tools where partners and customers can access allergen information for food and beverages","critical":true,"prompts":[]},{"text":"CRITICAL: Partners in store understand which equipment is shared that can cause a risk of allergen cross-contact","critical":true,"prompts":[]},{"text":"CRITICAL: Partners correctly provide the answer to the auditor's allergen question for a food item and beverage","critical":true,"prompts":[]},{"text":"CRITICAL: Partner followed the correct procedure when being asked an allergen question by a customer","critical":true,"prompts":[]},{"text":"CRITICAL: Parter serving could show auditor the food nutrition and allergen matrix on the tablet, for 3 food items provided by the auditor","critical":true,"prompts":[]},{"text":"CRITICAL: The test beverage and food item requested are safe to serve to the customer, with clear processes followed","critical":true,"prompts":[]},{"text":"MAJOR: Partners in store can confirm how many items contain each of the 14 allergens (e.g. 'how many contain milk?')","major":true,"prompts":[]},{"text":"MAJOR: Printed copies of the Nutrition & Allergen Matrix are up to date and reflect the digital copy","major":true,"prompts":[]},{"text":"MAJOR: Store Manager is recording their allergen checks in DRN to standard (accuracy and frequency)","major":true,"prompts":[]},{"text":"MAJOR: Purple tongs and purple lidded overnight containers are in use to control allergen cross-contact","major":true,"prompts":[]},{"text":"MAJOR: Allergen signage and statement visible in DT window, pastry case and menu/ordering screens as required","major":true,"prompts":[]},{"text":"MAJOR: No other allergen related issues observed","major":true,"prompts":[]},{"text":"MINOR: Coloured bands present on all dairy alternative jugs and used to standard","minor":true,"prompts":[]},{"text":"Observation (non‑scoring)","note":true,"nonScoring":true}]}},"asset_protection":{"scoring":"each-gap:-3pts","sections":{"TILL USAGE":[{"text":"Tills balanced every night (check for any 'cash' variance)"},{"text":"Service Recovery Vouchers stored near till points in view of CCTV"},{"text":"All tills have a working PED and scanner"},{"text":"All partners using own till code with correct access level"},{"text":"No mistake/stored transactions left on till from previous shift"},{"text":"Discounts inputted correctly including name for staff"},{"text":"Spot check discounts, all seem appropriate and in line with policies"},{"text":"Site errors and voids <3%"},{"text":"No Sales checked and explained"},{"text":"Till area checked for unexplained cards (MSR & credit/debit)"},{"text":"Delivery tablets on, set to auto accept and correct opening hours"}],"STOCK CONTROL":[{"text":"All purchase orders received on Orderly Inventory by 11am"},{"text":"Delivery notes being checked off and evidence of realistic credit requesting"},{"text":"Stock rotation in place - spot check merch, impulse, components"},{"text":"Store holding an appropriate amount of stock"},{"text":"Check Stock on Hand matches in store - 5 Chilled, 5 Bakery, 3 Merch lines"},{"text":"No evidence of potential stock theft (open bottled drinks, food packets)"}],"ALLERGEN TABLET":[{"text":"Tablet charged and in use"},{"text":"Tablet in good condition, any notable damage or case damage"},{"text":"Original charger and charger cable available"}],"HR COMPLIANCE":[{"text":"Salaried average hours over 4 weeks - no more than <22k 46hrs, 22k+ 48hrs"},{"text":"Minimum 1 day off (excl holiday) per week (2 if <18yrs)"},{"text":"Under 18's not working more than 40 hours per week, 8 hours per day"},{"text":"At least 11 hours break between shifts (12 hours <18)"},{"text":"Biometric clock in machines are working and linked to Shopworks"},{"text":"Biometric clock in machines in routine use by partners"},{"text":"No personal information (ID etc) is left on PC or printed in the office"}],"STORE SECURITY":[{"text":"Store PC under 30 days from last reboot and dust free"},{"text":"CCTV working (28 days) and warning notices displayed at entrances"},{"text":"Back doors kept closed and secured at all times"},{"text":"All keys secured in lockable key box"}],"COST CONTROL":[{"text":"Electricity controlled (e.g. no outside lights on during daylight)"},{"text":"Water controlled (e.g. taps not left running unattended)"},{"text":"Waste controlled (e.g. boxes flat packed, no excessive waste bins)"},{"text":"Maintenance controlled (e.g. Fridge vents clean, bars regularly cleaned)"},{"text":"SCORING (out of 35)"}]}},"store_walk_dt":{"scoring":"each-gap:-3pts","sections":{"Customer Service":[{"text":"Make every moment right","prompts":["Partners demonstrate Anticipation, Connection, Personalisation, Ownership at hand‑off","Capture a real customer comment today (positive or constructive)"]},{"text":"Connect with a customer","prompts":["Ask about their experience; record comment in notes"]}],"Drive Thru Zone":[{"text":"DT customer path clean, well maintained","prompts":["Litter picked; landscaping tidy; bins closed; entry/exit clear"]},{"text":"DT menu boards & signage accurate (Siren’s Eye)","prompts":["Current campaign/pricing; nutritional info visible; offers updated"]},{"text":"Drive‑thru six stages in use","prompts":["Greet • Menu Engage • Order • Pay • Handoff • Exit"]},{"text":"DTO/DTR baristas demonstrate Service Standards","prompts":["Tone & pace friendly; repeat order; use name; thank you at window"]}],"Café & Retail Zones":[{"text":"Store exterior, café, condiment bar, bathrooms clean & inviting","prompts":["Tables wiped; floors clean/dry; bins not overflowing; supplies stocked"]},{"text":"Retail area stocked, faced, signed (Siren’s Eye)","prompts":["Feature bay current; pricing correct; gaps filled"]},{"text":"Café atmosphere feels right","prompts":["Temperature comfortable; music appropriate volume; lighting on‑brand"]}],"POS & Food Zones":[{"text":"Food/RTD visually appealing, stocked, signed correctly","prompts":["Case faced; date rotation correct; promo items in place"]},{"text":"Transaction plane clear and set (Siren’s Eye)","prompts":["Point‑of‑sale clear; LTOs correct; cups/lids stocked"]},{"text":"Order Support/POS baristas demonstrate Service Standards","prompts":["Welcome, clarify, repeat, offer modifiers & food, close positively"]},{"text":"Café Order Routine steps in use","prompts":["1. Welcome  2. Mark  3. Ring  4. Gather  5. Tender  6. Finish"]}],"Bar & Handoff Zone":[{"text":"Work area clean; 5S in use","prompts":["Sort • Set in order • Shine • Standardise • Sustain"]},{"text":"Beverage Routine followed (classic)","prompts":["Steam milk → Queue shots → Syrup → Finish & Connect"]},{"text":"Blended Beverage Routine followed","prompts":["Pour → Blend → Finish & Connect"]},{"text":"Drive‑thru routines followed (DTO/DTW)","prompts":["DTO marks & queues; DTW finishes & connects without stopping flow"]},{"text":"Beverage sequencing evident","prompts":["Work two at a time; start second – finish first; keep machine busy"]},{"text":"Make every moment right at handoff","prompts":["Use name; call beverage; check lid fit; offer sleeve when needed"]}],"Measurements & Focus":[{"text":"Record Drive‑thru Window Times (1–5) vs goal","prompts":["Capture last 5 window times; compare with target for daypart"]},{"text":"Order & assess quality","prompts":["Order one beverage and one food item; quality acceptable?"]},{"text":"Queue balance check","prompts":["POS and Handoff counts balanced for last read?"]},{"text":"Best ½ hr car count known and improving","prompts":["Team can quote Best ½ hr and current progress vs it"]},{"text":"Current store focus","prompts":["What’s the focus this week? Is it visible in actions?"]},{"text":"Zone notes","prompts":["Add notes/actions and owners per zone"]}]}},"dt_go_see":{"scoring":"feedback","sections":{"Window Time & Order Readiness":[{"text":"Average window time (observed)","prompts":["Enter average seconds and notes"]},{"text":"Was the order ready at handoff?","prompts":["If No, note reasons (EB/W/CB/P/O)"]}],"Baulk Rate Observation":[{"text":"Counts observed","prompts":["# Balks","# Parked","# Pull outs","Line beyond order point"]}]}},"sea_assessment":{"scoring":"each-gap:-3pts","sections":{"SEA Checks":[{"text":"Deployment plan visible and in use"},{"text":"Daily plan completed and communicated"},{"text":"Duty roster up to date and aligned to demand"},{"text":"Barista basics displayed and followed"},{"text":"Resource manuals present and current"},{"text":"Exterior is clean and litter free"},{"text":"Store signage accurate and professional"},{"text":"Customer area clean, tidy and stocked"},{"text":"Drive-thru lane & window clean and functional"},{"text":"Safety checklist completed; actions closed"},{"text":"Emergency plan accessible; partners aware"},{"text":"Partner warmth & connection observed"},{"text":"Espresso recipe & yield followed"},{"text":"Milk routine followed (pour, aerate, auto-steam, clean)"},{"text":"Alternative dairy handled correctly"},{"text":"Brewed coffee quality & timers correct"},{"text":"Shelf-life labels present and accurate"},{"text":"Food prep standards & shelf-life followed"},{"text":"Deployment effectiveness on the floor"},{"text":"Equipment support & maintenance logs current"},{"text":"Back-of-house organised and safe"},{"text":"Waste, recycling & sustainability practices"}]}},"brot":{"type":"scored","scoring":{"rule":"custom-brot"},"sections":{"BROT":[{"text":"Embedded view"}]}}}}</script>
+<script>
+(function(){
+  const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+  const REG = JSON.parse($('#registry').textContent);
+  $('#today').textContent = new Date().toLocaleDateString(undefined,{day:'2-digit',month:'short',year:'numeric'});
+
+  // home tiles
+  const grid = $('#grid');
+  REG.tiles.forEach(t=>{
+    const c = document.createElement('div');
+    c.className='card';
+    c.innerHTML = `<h3>${t.title}</h3><p style="color:#9aa6bf">${t.desc}</p><span style="flex:1"></span><button class="btn">Start</button>`;
+    c.querySelector('button').onclick=()=>startAudit(t.id);
+    grid.appendChild(c);
+  });
+
+  let score = {ded:0, gaps:0, crit:0};
+  function resetScore(){ score={ded:0,gaps:0,crit:0}; renderChips(); }
+  function renderChips(){ $('#scorePct').textContent = Math.max(0, Math.min(100, Math.round(100-score.ded)))+'%'; $('#gapsCnt').textContent=score.gaps; $('#critCnt').textContent=score.crit; }
+  function apply(pts, critical, pct){ score.ded += pts; if(pts>0) score.gaps++; if(critical) score.crit++; if(pct){ score.ded += (pct*100); } renderChips(); }
+  function undo(pts, critical, pct){ score.ded -= pts; if(pts>0) score.gaps--; if(critical) score.crit--; if(pct){ score.ded -= (pct*100); } renderChips(); }
+
+  $('#backBtn').onclick=()=>{ $('#runner').style.display='none'; $('#home').style.display='block'; window.scrollTo(0,0); }
+  $('#printBtn').onclick=()=>window.print();
+
+  window.startAudit = function(key){
+    const t = REG.tiles.find(x=>x.id===key);
+    const cfg = REG.content[key];
+    $('#auditTitle').textContent = t?.title || 'Audit';
+    $('#auditDesc').textContent = t?.desc || '';
+    $('#sections').innerHTML='';
+    $('#home').style.display='none'; $('#runner').style.display='block'; window.scrollTo(0,0);
+    resetScore();
+
+    const mode = (cfg.scoring||'scored').toLowerCase();
+    // Build section menu first
+    const menu = document.createElement('div');
+    menu.className='panel'; menu.innerHTML='<h3>Sections</h3>';
+    const detail = document.createElement('div'); detail.id='detail';
+    Object.keys(cfg.sections||{}).forEach((sec,i)=>{
+      const b = document.createElement('button'); b.className='btn'; b.style.margin='6px 8px 6px 0'; b.textContent=sec;
+      b.onclick=()=>{ renderSection(key, mode, cfg, sec, detail); };
+      menu.appendChild(b);
+    });
+    $('#sections').appendChild(menu);
+    $('#sections').appendChild(detail);
+    const first = Object.keys(cfg.sections||{})[0]; if(first) renderSection(key, mode, cfg, first, detail);
+  };
+
+  function renderSection(key, mode, cfg, sec, mount){
+    mount.innerHTML='';
+    const items = cfg.sections[sec]||[];
+    if(mode==='feedback'){ // Go See
+      const p = shell(sec);
+      items.forEach(q=>{
+        const row = document.createElement('div'); row.className='q';
+        row.innerHTML = `<div class="q-title">${q.text}</div><textarea class="input" rows="3" placeholder="Notes / Observations"></textarea>`;
+        if(q.prompts?.length){ row.appendChild(tags(q.prompts)); }
+        p.appendChild(row);
+      });
+      mount.appendChild(p);
+      return;
+    }
+    // scoring rules parse
+    
+const sc = (cfg.scoring||'').toLowerCase();
+// Default rules
+const rules = {
+  criticalPts: 10, criticalPct: 0.10,
+  high:{pts:10,pct:0.10}, medium:{pts:5,pct:0}, low:{pts:2,pct:0},
+  major:{pts:5,pct:0}, minor:{pts:2,pct:0},
+  eachGap: null
+};
+// Parse tokens like "critical:-10pts; major:-3pts; minor:-3pts; each-gap:-3pts"
+if(sc){
+  sc.split(';').forEach(tok=>{
+    const t = tok.trim();
+    if(!t) return;
+    const [k, vraw] = t.split(':').map(s=>s.trim());
+    if(!k || !vraw) return;
+    const val = parseFloat(vraw.replace(/[^0-9.-]/g,''));
+    if(k==='critical'){ rules.criticalPts = Math.abs(val); rules.criticalPct = 0; }
+    if(k==='major'){ rules.major.pts = Math.abs(val); }
+    if(k==='minor'){ rules.minor.pts = Math.abs(val); }
+    if(k==='each-gap'){ rules.eachGap = Math.abs(val); }
+  });
+}
+
+    const p = shell(sec);
+    items.forEach((q,i)=>{
+      const id = `${key}-${sec}-${i}-${Math.random().toString(36).slice(2,8)}`;
+      const isCritical = !!q.critical;
+    
+let risk = (q.risk||'').toLowerCase();
+// Prefer explicit flags on question object
+if(q.major) risk = 'major';
+if(q.minor && !risk) risk = 'minor';
+// Fallback to text prefix if still unknown
+if(!risk){
+  const prefix = (q.text||'').toString().trim().toUpperCase();
+  if(prefix.startsWith('MAJOR')) risk='major';
+  else if(prefix.startsWith('MINOR')) risk='minor';
+}
+let pts = 0, pct=0;
+      if(rules.eachGap) pts = rules.eachGap;
+      if(isCritical){ pts = rules.criticalPts; pct = rules.criticalPct; }
+      if(risk==='high' && rules.high){ pts = rules.high.pts; pct = rules.high.pct; }
+      if(risk==='medium' && rules.medium){ pts = rules.medium.pts; }
+      if(risk==='low' && rules.low){ pts = rules.low.pts; }
+    if(risk==='major' && rules.major){ pts = rules.major.pts; }
+    if(risk==='minor' && rules.minor){ pts = rules.minor.pts; }
+
+      const qDiv = document.createElement('div'); qDiv.className='q';
+      qDiv.innerHTML = `<div class="q-title">${q.text}
+        ${isCritical?'<span class="tag">-10 pts & -10%</span>':''}
+        ${risk==='high'?'<span class="tag">High: -10 & -10%</span>':''}
+        ${risk==='medium'?'<span class="tag">Medium: -5</span>':''}
+        ${risk==='low'?'<span class="tag">Low: -2</span>':''}
+        ${rules.eachGap?'<span class="tag">-3 pts if gap</span>':''}
+      </div>
+      <div class="opt">
+        <label><input type="radio" name="${id}" value="ok" checked> Compliant</label>
+        <label><input type="radio" name="${id}" value="gap"> Gap</label>
+        <label><input type="radio" name="${id}" value="na"> N/A</label>
+      </div>
+      <div class="gap-fields" style="display:none">
+        <div class="row">
+          <input class="input" placeholder="Assignee" style="max-width:260px">
+          <input class="input" placeholder="Due (dd/mm/yyyy)" style="max-width:200px">
+          <input class="input" placeholder="Notes / Evidence" style="flex:1">
+        </div>
+      </div>`;
+      if(q.prompts?.length){ qDiv.appendChild(tags(q.prompts)); }
+      p.appendChild(qDiv);
+
+      
+    const gf = qDiv.querySelector('.gap-fields');
+    let applied = false;
+    qDiv.addEventListener('change', (ev)=>{
+      const el = ev.target;
+      if(el && el.type==='radio' && el.name === `${id}`){
+        if(el.value==='gap' && !applied){
+          apply(pts, isCritical, pct);
+          gf.style.display='block';
+          applied = true;
+        }else if(el.value!=='gap' && applied){
+          undo(pts, isCritical, pct);
+          gf.style.display='none';
+          applied = false;
+        }
+      }
+    });
+    });
+    mount.appendChild(p);
+  }
+
+  function shell(title){ const p=document.createElement('div'); p.className='panel'; const h=document.createElement('h3'); h.textContent=title; p.appendChild(h); return p; }
+  function tags(list){ const wrap=document.createElement('div'); list.forEach(t=>{ const s=document.createElement('span'); s.className='tag'; s.textContent=t; wrap.appendChild(s);}); return wrap; }
+})();
+</script>
+<!-- PHOTOS&HEADER START -->
+<script>(function(){function ensureHeaderMount(){var m=document.getElementById('auditHeader');if(m)return m;var d=document.getElementById('auditDesc');m=document.createElement('div');m.id='auditHeader';if(d&&d.parentNode){if(d.nextSibling){d.parentNode.insertBefore(m,d.nextSibling);}else{d.parentNode.appendChild(m);}}else{var s=document.getElementById('sections');if(s&&s.parentNode){s.parentNode.insertBefore(m,s);}else{document.body.appendChild(m);}}return m;}
+window.renderAuditHeader=function(){var mount=ensureHeaderMount();if(!mount)return;mount.innerHTML='';var p=document.createElement('div');p.className='panel';var h=document.createElement('h3');h.textContent='Audit Details';p.appendChild(h);var r=document.createElement('div');r.className='row';function field(l,t,w){var wra=document.createElement('div');wra.style.display='flex';wra.style.flexDirection='column';wra.style.gap='6px';wra.style.marginRight='16px';var L=document.createElement('div');L.className='muted';L.textContent=l;var inp=document.createElement('input');inp.className='input';inp.type=t||'text';if(w)inp.style.width=w;wra.appendChild(L);wra.appendChild(inp);return wra;}r.appendChild(field('Completed by','text','260px'));r.appendChild(field('Store visited','text','260px'));r.appendChild(field('Date','date','180px'));p.appendChild(r);mount.appendChild(p);};
+window.makePhotoControl=function(){var w=document.createElement('div');w.className='row photo-ctl';w.style.alignItems='center';w.style.gap='10px';var b=document.createElement('button');b.className='btn';b.type='button';b.textContent='Add Photo';var i=document.createElement('input');i.type='file';i.accept='image/*';i.style.display='none';var s=document.createElement('div');s.className='row';s.style.gap='8px';b.addEventListener('click',function(){i.click();});i.addEventListener('change',function(){Array.prototype.forEach.call(i.files||[],function(file){var url=URL.createObjectURL(file);var img=document.createElement('img');img.src=url;img.alt='evidence';img.style.width='72px';img.style.height='72px';img.style.objectFit='cover';img.style.borderRadius='8px';img.style.border='1px solid #223055';s.appendChild(img);});});w.appendChild(b);w.appendChild(s);w.appendChild(i);return w;};
+window.applyPhotoAugment=function(){var root=document.getElementById('sections');if(!root)return;Array.prototype.forEach.call(root.querySelectorAll('.q'),function(block){var hasOpt=block.querySelector('.opt input[type=\"radio\"]');if(hasOpt){if(block.querySelector('.photo-ctl'))return;var ctl=window.makePhotoControl?window.makePhotoControl():null;if(ctl){ctl.style.display='none';block.appendChild(ctl);block.addEventListener('change',function(ev){var t=ev.target;if(t&&t.type==='radio'){var nm=t.name;var chk=block.querySelector('input[name=\"'+nm+'\"]:checked');if(chk&&chk.value==='gap'){ctl.style.display='flex';}else{ctl.style.display='none';}}});}}else{if(!block.querySelector('.photo-ctl')){var ctl2=window.makePhotoControl?window.makePhotoControl():null;if(ctl2)block.appendChild(ctl2);}}});};
+function runAug(){if(window.renderAuditHeader)window.renderAuditHeader();if(window.applyPhotoAugment)window.applyPhotoAugment();}
+function wrapStart(){if(!window.startAudit||window.startAudit._wrapped)return false;var orig=window.startAudit;function wrapped(){var r=orig.apply(this,arguments);setTimeout(runAug,0);return r;}wrapped._wrapped=true;window.startAudit=wrapped;return true;}
+if(!wrapStart()){window.addEventListener('load',wrapStart);} })();</script>
+<!-- PHOTOS&HEADER END -->
+<script>(function(){
+  function el(t,a,c){const e=document.createElement(t);if(a){for(const k in a){if(k==='style'&&typeof a[k]==='object')Object.assign(e.style,a[k]);else if(k==='class')e.className=a[k];else e.setAttribute(k,a[k]);}}if(c!=null){if(c instanceof Node)e.appendChild(c);else e.textContent=String(c);}return e;}
+  function append(p,...kids){kids.forEach(k=>p.appendChild(k instanceof Node?k:document.createTextNode(String(k))));return p;}
+  window.renderBROT=function(){
+    document.getElementById('auditTitle').textContent='BROT – Beverage Routine Observation';
+    document.getElementById('auditDesc').textContent='Single page: tallies, quality & pace (multi‑timer)';
+    const mount=document.getElementById('sections'); mount.innerHTML='';
+    if(window.renderAuditHeader) window.renderAuditHeader();
+    document.getElementById('gapsCnt').innerText='—'; document.getElementById('critCnt').innerText='—'; document.getElementById('scorePct').innerText='—';
+
+    // 1) Tallies
+    const tallies=el('div',{class:'panel'}); append(tallies, el('h3',null,'1) Production Standards (Tallies)'));
+    const rows=[{label:'Milk Steaming'},{label:'Beverage Routine – Major Steps'},{label:'Sequencing'}];
+    const head=el('div',{class:'row',style:{alignItems:'center',fontWeight:'600'}});
+    append(head, el('div',{style:{width:'260px'}},'Item'), el('div',{style:{width:'160px'}},'YES'), el('div',{style:{width:'160px'}},'NO'), el('div',{style:{width:'140px'}},'Pass %'));
+    tallies.appendChild(head);
+    rows.forEach(r=>{ const line=el('div',{class:'row',style:{alignItems:'center'}});
+      const yes=el('input',{type:'number',min:'0',value:'0',class:'input',style:{width:'140px'}});
+      const no =el('input',{type:'number',min:'0',value:'0',class:'input',style:{width:'140px'}});
+      const pct=el('div',{style:{width:'120px'}},'0%');
+      function recalc(){ const y=+yes.value||0, n=+no.value||0, t=y+n; pct.textContent=(t?Math.round((y/t)*100):0)+'%'; }
+      yes.oninput=recalc; no.oninput=recalc;
+      append(line, el('div',{style:{width:'260px'}}, r.label), yes, no, pct); tallies.appendChild(line);
+    });
+    const tips=el('div',null); ['Pour → Aerate (2–3s or 6–8s) → Auto‑Steam → Clean','Queue shots → Syrup → Finish & connect','Work 2 beverages; start second, finish first; keep machine busy'].forEach(t=> tips.appendChild(el('span',{class:'tag'},t))); tallies.appendChild(tips);
+    mount.appendChild(tallies);
+
+    // 2) Beverage Quality
+    const quality=el('div',{class:'panel'}); append(quality, el('h3',null,'2) Beverage Quality'));
+    const bev=['Caffè Latte','Caffè Mocha','Caramel Macchiato']; const cols=['Full cup','Temp','Whip','Topping','Foam','Milk flavour','Espresso flavour'];
+    const hdr=el('div',{class:'row',style:{fontWeight:'600',alignItems:'center'}}); append(hdr, el('div',{style:{width:'220px'}},'Beverage')); cols.forEach(c=> hdr.appendChild(el('div',{style:{width:'120px'}},c))); hdr.appendChild(el('div',{style:{width:'120px'}},'Pass')); quality.appendChild(hdr);
+    const qrows=[]; function mkRow(nm){ const row=el('div',{class:'row',style:{alignItems:'center'}}); row.appendChild(el('div',{style:{width:'220px'}},nm));
+      const checks = cols.map(()=>{ const w=el('div',{style:{width:'120px'}}); const cb=el('input',{type:'checkbox'}); cb.style.transform='scale(1.2)'; cb.style.margin='0 45px 0 10px'; w.appendChild(cb); row.appendChild(w); return cb; });
+      const pass=el('div',{style:{width:'120px',fontWeight:'700'}},'—'); row.appendChild(pass);
+      function update(){ pass.textContent = checks.every(c=>c.checked)?'Pass':'Fail'; }
+      checks.forEach(c=> c.onchange=update);
+      quality.appendChild(row); qrows.push({update,pass});
+    }
+    bev.forEach(mkRow);
+    const pr=el('div',{class:'row',style:{marginTop:'8px',alignItems:'center'}}); const prChip=el('div',{class:'chip'}); prChip.append('Pass rate: ', el('strong',{id:'passRate'},'0%')); pr.appendChild(prChip); quality.appendChild(pr);
+    quality.addEventListener('change', ()=>{ let tot=qrows.length, ok=0; qrows.forEach(r=>{ r.update(); if(r.pass.textContent==='Pass') ok++; }); document.getElementById('passRate').textContent=Math.round((ok/tot)*100)+'%'; });
+    if(window.makePhotoControl){ quality.appendChild(window.makePhotoControl()); }
+    mount.appendChild(quality);
+
+    // 3) Pace multi‑timer (10 rows)
+    const pace=el('div',{class:'panel'}); append(pace, el('h3',null,'3) Beverage Production Pace (multi‑timer)'));
+    const ctrl=el('div',{class:'row',style:{alignItems:'center',gap:'12px',marginBottom:'8px'}}); const lvlLbl=el('div',null,'Production level:');
+    const lvl=el('select',{class:'input',style:{width:'260px'}}); ['1 (0–5 in queue • 45s target)','2 (6–10 • 37s)','3 (11–15 • 30s)','4 (16+ • 25s)'].forEach((t,i)=> lvl.appendChild(el('option',{value:String(i+1)},t)));
+    const avgChip=el('div',{class:'chip'},'Avg pace: 0s'); append(ctrl, lvlLbl, lvl, avgChip); pace.appendChild(ctrl);
+    const head=el('div',{class:'row',style:{fontWeight:'600',alignItems:'center'}}); append(head, el('div',{style:{width:'70px'}},'#'), el('div',{style:{width:'120px'}},'Status'), el('div',{style:{width:'140px'}},'Pace (s)'), el('div',{style:{width:'180px'}},'Type'), el('div',{style:{width:'160px'}},'Start'), el('div',{style:{width:'160px'}},'Handoff'), el('div',{style:{flex:'1'}},'Actions')); pace.appendChild(head);
+    const body=el('div',{}); pace.appendChild(body);
+    const rowsP=[]; function recalcAvg(){ const vals=rowsP.map(r=>r.paceVal).filter(v=>typeof v==='number'); const avg=vals.length? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):0; avgChip.textContent='Avg pace: '+avg+'s'; }
+    function mkRow(i){ const r=el('div',{class:'row',style:{alignItems:'center'}}); const idx=el('div',{style:{width:'70px'}}, String(i)); const status=el('div',{style:{width:'120px'}}, 'Idle'); const paceCell=el('div',{style:{width:'140px',fontWeight:'700'}}, '—'); const typ=el('select',{class:'input',style:{width:'170px'}}); ['Espresso','Blended','Other'].forEach(v=> typ.appendChild(el('option',{value:v},v))); const startTs=el('div',{style:{width:'160px'}}, '—'); const endTs=el('div',{style:{width:'160px'}}, '—'); const act=el('div',{style:{flex:'1'}}); const bS=el('button',{class:'btn'},'Start'); const bH=el('button',{class:'btn'},'Handoff'); const bR=el('button',{class:'btn'},'Reset'); act.append(bS, document.createTextNode(' '), bH, document.createTextNode(' '), bR);
+      let t0=null, running=false; function fmt(t){ return new Date(t).toLocaleTimeString(); }
+      bS.onclick=()=>{ t0=Date.now(); running=true; status.textContent='Running'; startTs.textContent=fmt(t0); endTs.textContent='—'; paceCell.textContent='—'; paceCell.style.color=''; };
+      bH.onclick=()=>{ if(!running) return; const now=Date.now(); const d=(now-t0)/1000; r.paceVal=d; status.textContent='Complete'; paceCell.textContent=d.toFixed(0); paceCell.style.color=(d>=20&&d<=55)?'#42d392':'#ff9f6b'; endTs.textContent=fmt(now); running=false; recalcAvg(); };
+      bR.onclick=()=>{ running=false; t0=null; r.paceVal=undefined; status.textContent='Idle'; paceCell.textContent='—'; startTs.textContent='—'; endTs.textContent='—'; paceCell.style.color=''; recalcAvg(); };
+      append(r, idx, status, paceCell, typ, startTs, endTs, act); body.appendChild(r); return r;
+    }
+    for(let i=1;i<=10;i++) rowsP.push(mkRow(i));
+    mount.appendChild(pace);
+
+    // 4) Notes
+    const notes=el('div',{class:'panel'}); append(notes, el('h3',null,'Observation & Coaching Notes')); notes.appendChild(el('textarea',{class:'input',rows:'4',placeholder:'Key observations, recognition, follow‑ups'})); if(window.makePhotoControl){ notes.appendChild(window.makePhotoControl()); } mount.appendChild(notes);
+  };
+  const _orig = window.startAudit; window.startAudit=function(k){ if(k==='brot'){ document.getElementById('home').style.display='none'; document.getElementById('runner').style.display='block'; window.scrollTo(0,0); renderBROT(); return; } return _orig? _orig.apply(this, arguments):undefined; };
+})();</script>
+<script>(function(){
+  function el(t,a,c){const e=document.createElement(t);if(a){for(const k in a){if(k==='style'&&typeof a[k]==='object')Object.assign(e.style,a[k]);else if(k==='class')e.className=a[k];else e.setAttribute(k,a[k]);}}if(c!=null){if(c instanceof Node)e.appendChild(c);else e.textContent=String(c);}return e;}
+  function append(p,...kids){kids.forEach(k=>p.appendChild(k instanceof Node?k:document.createTextNode(String(k))));return p;}
+  function chip(label, id){ const c=el('div',{class:'chip'}); append(c,label,' ',el('strong',{id:id},'—')); return c; }
+
+  window.renderGOSEE=function(){
+    document.getElementById('auditTitle').textContent='Drive Thru Go See';
+    document.getElementById('auditDesc').textContent='Guided feedback capture (no scoring)';
+    const mount=document.getElementById('sections'); mount.innerHTML='';
+    if(window.renderAuditHeader) window.renderAuditHeader();
+    document.getElementById('gapsCnt').innerText='—'; document.getElementById('critCnt').innerText='—'; document.getElementById('scorePct').innerText='—';
+
+    // 1) Window Time & Order Readiness
+    const wtor=el('div',{class:'panel'}); append(wtor, el('h3',null,'1) Window Time & Order Readiness'));
+    const top=el('div',{class:'row',style:{alignItems:'center',gap:'12px'}});
+    const store=el('input',{class:'input',placeholder:'Store Number',style:{width:'180px'}});
+    const startT=el('input',{class:'input',type:'time',style:{width:'140px'}});
+    const stopT =el('input',{class:'input',type:'time',style:{width:'140px'}});
+    append(top, el('div',null,'Store #'), store, el('div',null,'Start'), startT, el('div',null,'Stop'), stopT, chip('Avg Window Time:','avgWinTime'), chip('Order Ready %:','orderReadyPct'));
+    wtor.appendChild(top);
+    const head=el('div',{class:'row',style:{fontWeight:'600',marginTop:'8px'}});
+    ['#','Window Time (s)','Order Ready?','Reason (EB/CB/W/P/O)','Payment (CC/CA/SC)','Receipt (Y/N)','What DTR did first','Connection?','Comments: drinks/food/other'].forEach((t,i)=>{ const w=[50,160,140,260,160,140,200,140,320][i]; head.appendChild(el('div',{style:{width:w+'px'}}, t)); });
+    wtor.appendChild(head);
+    const body=el('div',{}); const rows=[];
+    function mkRow(i){ const r=el('div',{class:'row',style:{alignItems:'center'}});
+      const wt=el('input',{type:'number',min:'0',class:'input',style:{width:'150px'},placeholder:'sec'});
+      const or=el('select',{class:'input',style:{width:'130px'}}); ['Yes','No',''].forEach(x=> or.appendChild(el('option',{value:x},x)));
+      const rs=el('input',{class:'input',style:{width:'250px'},placeholder:'EB/CB/W/P/O'});
+      const pay=el('select',{class:'input',style:{width:'150px'}}); ['CC','CA','SC',''].forEach(x=> pay.appendChild(el('option',{value:x},x)));
+      const rec=el('select',{class:'input',style:{width:'130px'}}); ['Y','N',''].forEach(x=> rec.appendChild(el('option',{value:x},x)));
+      const role=el('input',{class:'input',style:{width:'190px'},placeholder:'Take payment? Hand drink?'});
+      const con=el('select',{class:'input',style:{width:'130px'}}); ['Yes','No',''].forEach(x=> con.appendChild(el('option',{value:x},x)));
+      const cmt=el('input',{class:'input',style:{width:'310px'},placeholder:'# bevs, food, other…'});
+      append(r, el('div',{style:{width:'50px'}}, String(i)), wt, or, rs, pay, rec, role, con, cmt);
+      [wt,or,rs,pay,rec,role,con,cmt].forEach(inp=> inp.addEventListener('input', recalc));
+      body.appendChild(r); return {wt,or};
+    }
+    for(let i=1;i<=20;i++) rows.push(mkRow(i));
+    function recalc(){ let sum=0,c=0,ready=0;
+      rows.forEach(r=>{ const v=parseFloat(r.wt.value); if(!isNaN(v)){ sum+=v; c++; } if(r.or.value==='Yes') ready++; });
+      document.getElementById('avgWinTime').textContent = (c? Math.round(sum/c):0)+'s';
+      document.getElementById('orderReadyPct').textContent = Math.round((ready/rows.length)*100)+'%';
+    }
+    // photo control
+    if(window.makePhotoControl) wtor.appendChild(window.makePhotoControl());
+    mount.appendChild(wtor);
+
+    // 2) Baulk Rate Go-See
+    const baulk=el('div',{class:'panel'}); append(baulk, el('h3',null,'2) Baulk Rate Go‑See (60 min outside near entry)'));
+    const brTop=el('div',{class:'row',style:{alignItems:'center',gap:'12px'}});
+    const avgCheck=el('input',{type:'number',min:'0',class:'input',style:{width:'140px'},placeholder:'Avg check £'});
+    append(brTop, el('div',null,'Avg Check'), avgCheck, chip('Balks','balks'), chip('Potential Loss','loss'));
+    baulk.appendChild(brTop);
+    const h2=el('div',{class:'row',style:{fontWeight:'600'}});
+    ['Balk (left)','Parked (went into café) from outside','In line → Café (parked)','In line → Left (pull out baulk)','Line length beyond OP (# cars)','Additional comments'].forEach((t,i)=>{ const w=[140,240,200,200,220,320][i]; h2.appendChild(el('div',{style:{width:w+'px'}}, t)); });
+    baulk.appendChild(h2);
+    const wrap=el('div',{});
+    function counterCell(width){ const w=el('div',{style:{width:width+'px',display:'flex',alignItems:'center',gap:'6px'}}); const minus=el('button',{class:'btn'},'-'); const num=el('input',{type:'number',class:'input',value:'0',style:{width:'70px'}}); const plus=el('button',{class:'btn'},'+'); minus.onclick=()=>{ num.value=Math.max(0,(+num.value||0)-1); calc();}; plus.onclick=()=>{ num.value=(+num.value||0)+1; calc();}; w.append(minus,num,plus); return {wrap:w,num:num}; }
+    const c1=counterCell(140), c2=counterCell(240), c3=counterCell(200), c4=counterCell(200); const len=el('input',{type:'number',class:'input',style:{width:'210px'},placeholder:'# cars beyond OP'}); const comm=el('input',{class:'input',style:{width:'310px'},placeholder:'Notes'});
+    const line=el('div',{class:'row',style:{alignItems:'center'}}); append(line, c1.wrap, c2.wrap, c3.wrap, c4.wrap, len, comm); wrap.appendChild(line); baulk.appendChild(wrap);
+    function calc(){ const b=(+c1.num.value||0)+(+c4.num.value||0); document.getElementById('balks').textContent=String(b); const loss=b*(+avgCheck.value||0); document.getElementById('loss').textContent=isFinite(loss)?'£'+loss.toFixed(2):'—'; }
+    avgCheck.oninput=calc;
+    if(window.makePhotoControl) baulk.appendChild(window.makePhotoControl());
+    mount.appendChild(baulk);
+
+    // 3) Readiness Checklist
+    const ready=el('div',{class:'panel'}); append(ready, el('h3',null,'3) Store Readiness Checklist (5 min)'));
+    ['Dedicated space & staging area taped','Food featured in the drive‑thru','Under‑counter fridge stocked with RTD/RTE','Cup labeler and expeditor monitor in place','Comms tools live; OOS tracked'].forEach((t,i)=>{
+      const r=el('div',{class:'row',style:{alignItems:'center'}}); const y=el('input',{type:'radio',name:'r'+i,value:'Y'}); const n=el('input',{type:'radio',name:'r'+i,value:'N'}); y.style.margin='0 8px 0 0'; n.style.margin='0 8px 0 16px'; append(r, el('div',{style:{width:'36px'}},'Y'), y, el('div',{style:{width:'36px'}},'N'), n, el('div',{style:{flex:1}}, t)); ready.appendChild(r);
+    });
+    if(window.makePhotoControl) ready.appendChild(window.makePhotoControl());
+    mount.appendChild(ready);
+
+    // 4) Deployment Assessment & Observation
+    const dep=el('div',{class:'panel'}); append(dep, el('h3',null,'4) Deployment Assessment')); const cfg=el('select',{class:'input',style:{width:'360px'}}); ['3‑partner (DTR, DTO, DTB)','4‑partner (DTR, DTO, DTB, DTF)','5‑partner (DTR, DTO, DTB, DTB Support, DTF)'].forEach(t=> cfg.appendChild(el('option',{value:t},t))); dep.appendChild(cfg);
+    append(dep, el('h4',null,'Deployment Observation (slide‑aways + reasons)')); const head3=el('div',{class:'row',style:{fontWeight:'600'}}); append(head3, el('div',{style:{width:'160px'}},'Role'), el('div',{style:{width:'140px'}},'# Slide‑aways'), el('div',{style:{flex:1}},'Reasons/Notes')); dep.appendChild(head3);
+    ['DTR','DTO','DTB','DTF','DTB Support'].forEach(rn=>{ const rr=el('div',{class:'row',style:{alignItems:'center'}}); const cnt=el('input',{type:'number',min:'0',class:'input',style:{width:'120px'},value:'0'}); const why=el('input',{class:'input',style:{flex:1},placeholder:'Why left station?'}); append(rr, el('div',{style:{width:'160px'}}, rn), cnt, why); dep.appendChild(rr); });
+    if(window.makePhotoControl) dep.appendChild(window.makePhotoControl());
+    mount.appendChild(dep);
+
+    // 5) Suggestive Sell Go‑See
+    const ss=el('div',{class:'panel'}); append(ss, el('h3',null,'5) Suggestive Sell Go‑See (30 min)'));
+    const head4=el('div',{class:'row',style:{fontWeight:'600'}}); ['#','Did partner suggest? (Y/N)','What was suggested?','Did customer accept? (Y/N)','Additional comments'].forEach((t,i)=>{ const w=[50,190,260,220,360][i]; head4.appendChild(el('div',{style:{width:w+'px'}}, t)); }); ss.appendChild(head4);
+    const sBody=el('div',{}); for(let i=1;i<=24;i++){ const r=el('div',{class:'row',style:{alignItems:'center'}}); const sug=el('select',{class:'input',style:{width:'180px'}}); ['','Y','N'].forEach(v=> sug.appendChild(el('option',{value:v},v))); const what=el('input',{class:'input',style:{width:'250px'},placeholder:'Item/offer'}); const acc=el('select',{class:'input',style:{width:'210px'}}); ['','Y','N'].forEach(v=> acc.appendChild(el('option',{value:v},v))); const com=el('input',{class:'input',style:{width:'350px'},placeholder:'Reaction/relevancy/queues'}); append(r, el('div',{style:{width:'50px'}},String(i)), sug, what, acc, com); sBody.appendChild(r); }
+    ss.appendChild(sBody);
+    const sum=el('div',{class:'row',style:{marginTop:'8px',gap:'12px'}}); append(sum, chip('Transactions Observed:','txObs'), chip('% with Suggestive Sell:','ssPct'), chip('# Accepted:','ssAcc')); ss.appendChild(sum);
+    function recalcSS(){ const rows=[...sBody.children]; let tx=0, sugYes=0, accYes=0; rows.forEach(r=>{ const sel1=r.children[1].querySelector('select'); const sel3=r.children[3].querySelector('select'); if(sel1.value) tx++; if(sel1.value==='Y') sugYes++; if(sel3.value==='Y') accYes++; }); document.getElementById('txObs').textContent=String(tx); document.getElementById('ssPct').textContent=(tx?Math.round((sugYes/tx)*100):0)+'%'; document.getElementById('ssAcc').textContent=String(accYes); }
+    ss.addEventListener('change', recalcSS);
+    if(window.makePhotoControl) ss.appendChild(window.makePhotoControl());
+    mount.appendChild(ss);
+
+    // 6) Final Notes
+    const notes=el('div',{class:'panel'}); append(notes, el('h3',null,'Final Notes & Follow‑ups')); notes.appendChild(el('textarea',{class:'input',rows:'4',placeholder:'What did you observe? What will you recognise? Any follow‑ups?'})); if(window.makePhotoControl) notes.appendChild(window.makePhotoControl()); mount.appendChild(notes);
+  };
+  const _orig=window.startAudit; window.startAudit=function(k){ if(k==='dt_go_see'){ document.getElementById('home').style.display='none'; document.getElementById('runner').style.display='block'; window.scrollTo(0,0); renderGOSEE(); return; } return _orig? _orig.apply(this, arguments):undefined; };
+})();</script>
+<script>(function(){
+  function currentAuditKey(){try{const reg=JSON.parse(document.getElementById('registry').textContent);const title=document.getElementById('auditTitle').textContent.trim();const tile=(reg.tiles||[]).find(t=>t.title===title);return tile?tile.id:title.toLowerCase().replace(/\s+/g,'_');}catch(e){return 'audit';}}
+  function collectState(){
+    const data={auditKey:currentAuditKey(),title:document.getElementById('auditTitle').textContent,desc:document.getElementById('auditDesc').textContent,header:{completedBy:(document.querySelector('#auditHeader input[type=\"text\"]')||{}).value||'',store:(document.querySelectorAll('#auditHeader input[type=\"text\"]')[1]||{}).value||'',date:(document.querySelector('#auditHeader input[type=\"date\"]')||{}).value||''},chips:{score:document.getElementById('scorePct')?.textContent||'',gaps:document.getElementById('gapsCnt')?.textContent||'',critical:document.getElementById('critCnt')?.textContent||''},items:[],fields:[]};
+    document.querySelectorAll('#sections .q').forEach(q=>{const qTitle=q.querySelector('.q-title')?.textContent||'';const radios=q.querySelectorAll('.opt input[type=\"radio\"]');let resp=null;if(radios.length){const chk=q.querySelector('.opt input[type=\"radio\"]:checked');resp=chk?chk.value:null;}const gap=q.querySelector('.gap-fields');const action=gap?{assignee:gap.querySelector('input[placeholder=\"Assignee\"]')?.value||'',due:gap.querySelector('input[placeholder=\"Due (dd/mm/yyyy)\"]')?.value||'',notes:gap.querySelector('input[placeholder=\"Notes / Evidence\"]')?.value||''}:null;const notes=q.querySelector('textarea')?.value||'';const photos=Array.from(q.querySelectorAll('.photo-ctl img')).map(img=>img.src).filter(s=>s.startsWith('data:image/'));data.items.push({text:qTitle,response:resp,action,notes,photos});});
+    document.querySelectorAll('#sections input, #sections select, #sections textarea').forEach((el,idx)=>{if(el.type==='file')return;let v=null;if(el.tagName==='SELECT')v=el.value;else if(el.type==='checkbox'||el.type==='radio')v=el.checked;else v=el.value;data.fields.push({index:idx,tag:el.tagName.toLowerCase(),type:el.type||'',value:v,placeholder:el.placeholder||'',id:el.id||'',name:el.name||''});});
+    return data;
+  }
+  function saveState(){const data=collectState();const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');const ts=new Date().toISOString().replace(/[:.]/g,'-');a.download=(data.auditKey||'audit')+'_'+ts+'.json';a.href=URL.createObjectURL(blob);a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);}
+  function resetAudit(){if(!confirm('Are you sure you want to reset this audit? This will clear all inputs and photos.'))return;const title=document.getElementById('auditTitle').textContent.trim();const reg=JSON.parse(document.getElementById('registry').textContent);const tile=(reg.tiles||[]).find(t=>t.title===title);if(tile&&window.startAudit)window.startAudit(tile.id);}
+  const s=document.getElementById('saveBtn');const r=document.getElementById('resetBtn');if(s)s.addEventListener('click',saveState);if(r)r.addEventListener('click',resetAudit);
+})();</script>
+<!-- BROT template injected automatically -->
+<template id="brot-template">
+<div class="wrap">
+<h1>BROT – Beverage Routine Observation</h1>
+<div class="sub">Tallies, quality &amp; pace (timer). • Single page</div>
+<div class="panel">
+<h3 style="margin:0 0 10px">Audit Details</h3>
+<div class="grid3">
+<div>
+<label class="lbl">Completed by</label>
+<input class="input" id="by"/>
+</div>
+<div>
+<label class="lbl">Store visited</label>
+<input class="input" id="store"/>
+</div>
+<div>
+<label class="lbl">Date</label>
+<input class="input" id="date" type="date"/>
+</div>
+</div>
+</div>
+<div class="row">
+<div class="chip"><strong>Score</strong>  <span id="score">100%</span></div>
+<div class="chip"><strong>Gaps</strong>  <span id="gaps">0</span></div>
+<div class="chip danger"><strong>Critical</strong>  <span id="crit">0</span></div>
+</div>
+<div class="panel" id="talliesPanel">
+<h3 style="margin-top:0">1) Production Standards (Tallies)</h3>
+<table class="tbl">
+<thead><tr>
+<th style="width:45%">Item</th><th style="width:120px">YES</th><th style="width:120px">NO</th><th>Pass %</th>
+</tr></thead>
+<tbody id="tallyBody"></tbody>
+</table>
+<div class="note" style="margin-top:8px">
+<span class="chip">Pour → Aerate (2–3s or 6–8s)</span>
+<span class="chip">Auto‑Steam → Clean</span>
+<span class="chip">Queue shots → Syrup → Finish &amp; connect</span>
+<span class="chip">Work 2 beverages; start second, finish first; keep machine busy</span>
+</div>
+</div>
+<div class="panel">
+<h3 style="margin-top:0">2) Beverage Quality</h3>
+<div class="quality-grid" id="qualityGrid"></div>
+</div>
+<div class="panel">
+<h3 style="margin-top:0">3) Beverage Production Pace</h3>
+<p class="note">Start each lane when the beverage begins; press <b>Handoff</b> at hand‑off. Ten concurrent lanes supported.</p>
+<div class="row">
+<span class="chip">Aim: 20–55s per drink (depends on level)</span>
+</div>
+<div class="lanes" id="lanes"></div>
+</div>
+<div class="toolbar">
+<button class="btn" id="saveBtn">Save</button>
+<button class="btn" id="resetBtn">Reset all</button>
+</div>
+</div>
+<script>
+const STORAGE_KEY = 'brot_v1';
+
+const tallyRows = [
+  { key:'milk', label:'Milk Steaming' },
+  { key:'major', label:'Beverage Routine – Major Steps' },
+  { key:'seq', label:'Sequencing' },
+];
+
+const beverages = ['Caffè Latte','Caffè Mocha','Caramel Macchiato'];
+const attrs = ['Full cup','Temp','Whip','Topping','Foam','Milk flavour','Espresso flavour'];
+
+function el(tag, cls){ const e=document.createElement(tag); if(cls) e.className=cls; return e; }
+
+function buildTallies(){
+  const tb = document.getElementById('tallyBody'); tb.innerHTML='';
+  tallyRows.forEach(r=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td>'+r.label+'</td><td></td><td></td><td><span id="pct_'+r.key+'">0%</span></td>';
+    const yes = el('input','input'); yes.type='number'; yes.min='0'; yes.step='1'; yes.id='yes_'+r.key;
+    const no  = el('input','input'); no.type='number';  no.min='0';  no.step='1';  no.id='no_'+r.key;
+    yes.addEventListener('input', recalc); no.addEventListener('input', recalc);
+    tr.children[1].append(yes); tr.children[2].append(no);
+    tb.append(tr);
+  });
+}
+
+function recalc(){
+  tallyRows.forEach(r=>{
+    const y=+val('yes_'+r.key), n=+val('no_'+r.key);
+    const pct = (y+n)>0 ? Math.round((y/(y+n))*100) : 0;
+    text('pct_'+r.key, pct+'%');
+  });
+  saveNow();
+}
+
+function buildQuality(){
+  const grid = document.getElementById('qualityGrid'); grid.innerHTML='';
+  grid.append(hcell('Beverage')); attrs.forEach(a=>grid.append(hcell(a)));
+  beverages.forEach((bev,bi)=>{
+    grid.append(bhcell(bev));
+    attrs.forEach((a,ai)=>{
+      const id = 'q_'+bi+'_'+ai;
+      const cell = el('div','q-b');
+      const chk = el('input'); chk.type='checkbox'; chk.id=id;
+      chk.addEventListener('input', saveNow);
+      cell.append(chk);
+      grid.append(cell);
+    });
+  });
+}
+function hcell(t){ const d=el('div','q-h'); d.textContent=t; return d; }
+function bhcell(t){ const d=el('div','q-bh'); d.textContent=t; return d; }
+
+function buildLanes(){
+  const lanes = document.getElementById('lanes'); lanes.innerHTML='';
+  for(let i=1;i<=10;i++){ lanes.append(paceLane(i)); }
+}
+
+function paceLane(idx){
+  let timer=null, startAt=null, lastLap=null, laps=[];
+  const wrap = el('div','lane');
+  const title = el('div','lane-h'); title.textContent = '#'+idx;
+  const read  = el('div','lane-r');
+  const bStart= button('Start', ()=>{
+    if(!startAt){ startAt=Date.now(); lastLap=startAt; laps=[]; update(); saveNow(); }
+    if(!timer){ timer=setInterval(update,100); }
+  });
+  const bLap  = button('Handoff', ()=>{
+    if(!startAt) return;
+    const now=Date.now(); const s = Math.round((now-lastLap)/100)/10;
+    laps.push(s); lastLap=now; update(); saveNow();
+  });
+  const bReset= button('Reset', ()=>{
+    if(!confirm('Are you sure you want to reset this lane?')) return;
+    if(timer){ clearInterval(timer); timer=null; }
+    startAt=null; lastLap=null; laps=[]; update(); saveNow();
+  });
+  const btns=el('div','lane-b'); btns.append(bStart,bLap,bReset);
+  wrap.append(title,read,btns);
+
+  function update(){
+    read.innerHTML='';
+    if(!startAt){ read.textContent='—'; return; }
+    const cur=Math.round((Date.now()-lastLap)/100)/10;
+    const line=el('div','lane-now'); line.textContent='Current: '+cur.toFixed(1)+'s'; read.append(line);
+    if(laps.length){
+      const list=el('div','lane-laps');
+      laps.forEach((v,i)=>{ const d=el('div'); d.textContent='#'+(i+1)+' — '+v.toFixed(1)+'s'; list.append(d); });
+      const avg=laps.reduce((a,b)=>a+b,0)/laps.length; const a=el('div','lane-avg'); a.textContent='Avg: '+avg.toFixed(1)+'s'; list.append(a);
+      read.append(list);
+    }
+  }
+  return wrap;
+}
+
+function button(t,fn){ const b=el('button','btn'); b.textContent=t; b.addEventListener('click',fn); return b; }
+function val(id){ const e=document.getElementById(id); return e?e.value:0; }
+function text(id,v){ const e=document.getElementById(id); if(e) e.textContent=v; }
+
+// Save/restore
+function saveNow(){
+  const data={};
+  ['by','store','date'].forEach(id=>{ const e=document.getElementById(id); if(e) data[id]=e.value; });
+  tallyRows.forEach(r=>{ data['yes_'+r.key]=val('yes_'+r.key); data['no_'+r.key]=val('no_'+r.key); });
+  // quality checkboxes
+  beverages.forEach((_,bi)=>attrs.forEach((__,ai)=>{
+    const id='q_'+bi+'_'+ai, e=document.getElementById(id); if(e) data[id]=e.checked;
+  }));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function restore(){
+  const raw=localStorage.getItem(STORAGE_KEY); if(!raw) return;
+  const d=JSON.parse(raw);
+  ['by','store','date'].forEach(id=>{ const e=document.getElementById(id); if(e&&d[id]!==undefined) e.value=d[id]; });
+  tallyRows.forEach(r=>{
+    const y=document.getElementById('yes_'+r.key); const n=document.getElementById('no_'+r.key);
+    if(y&&d['yes_'+r.key]!==undefined) y.value=d['yes_'+r.key];
+    if(n&&d['no_'+r.key]!==undefined)  n.value=d['no_'+r.key];
+  });
+  beverages.forEach((_,bi)=>attrs.forEach((__,ai)=>{
+    const id='q_'+bi+'_'+ai, e=document.getElementById(id); if(e&&d[id]!==undefined) e.checked=d[id];
+  }));
+  recalc();
+}
+
+document.getElementById('saveBtn').addEventListener('click', saveNow);
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  if(!confirm('Are you sure you want to reset this form?')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  location.reload();
+});
+
+// init
+buildTallies();
+buildQuality();
+buildLanes();
+restore();
+</script>
+</template>
+<script>
+(function(){
+  function ensureBrotStyles(){
+    if(!document.getElementById('brot-style-0')){
+      const st=document.createElement('style');
+      st.id='brot-style-0';
+      st.textContent=`
+:root{--bg:#0a1020;--panel:#0f1526;--panel2:#0b1222;--bd:#223055;--txt:#d9e1ff;--mut:#aab4d6;--chip:#121a30;--prim:#2b67ff}
+*{box-sizing:border-box;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+html,body{margin:0;background:var(--bg);color:var(--txt)}
+.wrap{max-width:1200px;margin:24px auto;padding:0 16px}
+h1{font-size:28px;margin:0 0 8px}
+.sub{color:var(--mut);margin-bottom:18px}
+.panel{background:var(--panel);border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 220px;gap:12px}
+.lbl{display:block;margin:0 0 6px;color:var(--mut)}
+.input{width:100%;background:#0a1122;border:1px solid var(--bd);border-radius:10px;padding:10px 12px;color:var(--txt)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.chip{background:var(--chip);border:1px solid var(--bd);padding:8px 10px;border-radius:999px;color:var(--txt)}
+.chip.danger{background:#2a1020;border-color:#5a2e43}
+/* Tallies */
+.tbl{width:100%;border-collapse:separate;border-spacing:0 8px}
+.tbl th,.tbl td{padding:10px 12px;background:var(--panel);border:1px solid var(--bd)}
+.tbl th{background:var(--panel2);color:var(--mut);font-weight:600}
+/* Quality grid */
+.quality-grid{display:grid;grid-template-columns:220px repeat(7,1fr);gap:8px}
+.q-h{background:var(--panel2);border:1px solid var(--bd);padding:8px 10px;font-weight:600;color:var(--mut)}
+.q-bh{background:var(--panel);border:1px solid var(--bd);padding:8px 10px;font-weight:600}
+.q-b{background:var(--panel);border:1px solid var(--bd);padding:8px 10px;display:flex;align-items:center;gap:8px}
+/* Pace lanes */
+.lanes{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.lane{border:1px solid var(--bd);background:var(--panel);border-radius:12px;padding:12px}
+.lane-h{font-weight:700;margin-bottom:6px}
+.lane-r{font-size:14px;color:var(--mut)}
+.lane-now{margin-bottom:6px}
+.lane-laps{display:flex;flex-wrap:wrap;gap:10px}
+.lane-avg{font-weight:700}
+.lane-b{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.btn{border:1px solid var(--bd);background:#0a1122;color:var(--txt);border-radius:10px;padding:8px 12px;cursor:pointer}
+.btn.primary{background:var(--prim);border-color:transparent}
+.toolbar{display:flex;gap:10px;justify-content:flex-end;margin-top:12px}
+.note{color:var(--mut)}
+`;
+      document.head.appendChild(st);
+    }
+    
+  }
+  window.renderBROT = function(){ 
+    const home=document.getElementById('home');
+    const runner=document.getElementById('runner');
+    if(home) home.style.display='none';
+    if(runner) runner.style.display='block';
+    var title = document.getElementById('auditTitle');
+    var desc  = document.getElementById('auditDesc');
+    if(title) title.textContent = "BROT – Beverage Routine Observation";
+    if(desc)  desc.textContent  = "Tallies, quality & pace (timer). Single page.";
+    ensureBrotStyles();
+    const tpl=document.getElementById('brot-template');
+    const host=document.getElementById('sections');
+    host.innerHTML = tpl ? tpl.innerHTML : "<div style='color:#f99'>BROT template missing</div>";
+    (function(){
+const STORAGE_KEY = 'brot_v1';
+
+const tallyRows = [
+  { key:'milk', label:'Milk Steaming' },
+  { key:'major', label:'Beverage Routine – Major Steps' },
+  { key:'seq', label:'Sequencing' },
+];
+
+const beverages = ['Caffè Latte','Caffè Mocha','Caramel Macchiato'];
+const attrs = ['Full cup','Temp','Whip','Topping','Foam','Milk flavour','Espresso flavour'];
+
+function el(tag, cls){ const e=document.createElement(tag); if(cls) e.className=cls; return e; }
+
+function buildTallies(){
+  const tb = document.getElementById('tallyBody'); tb.innerHTML='';
+  tallyRows.forEach(r=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td>'+r.label+'</td><td></td><td></td><td><span id="pct_'+r.key+'">0%</span></td>';
+    const yes = el('input','input'); yes.type='number'; yes.min='0'; yes.step='1'; yes.id='yes_'+r.key;
+    const no  = el('input','input'); no.type='number';  no.min='0';  no.step='1';  no.id='no_'+r.key;
+    yes.addEventListener('input', recalc); no.addEventListener('input', recalc);
+    tr.children[1].append(yes); tr.children[2].append(no);
+    tb.append(tr);
+  });
+}
+
+function recalc(){
+  tallyRows.forEach(r=>{
+    const y=+val('yes_'+r.key), n=+val('no_'+r.key);
+    const pct = (y+n)>0 ? Math.round((y/(y+n))*100) : 0;
+    text('pct_'+r.key, pct+'%');
+  });
+  saveNow();
+}
+
+function buildQuality(){
+  const grid = document.getElementById('qualityGrid'); grid.innerHTML='';
+  grid.append(hcell('Beverage')); attrs.forEach(a=>grid.append(hcell(a)));
+  beverages.forEach((bev,bi)=>{
+    grid.append(bhcell(bev));
+    attrs.forEach((a,ai)=>{
+      const id = 'q_'+bi+'_'+ai;
+      const cell = el('div','q-b');
+      const chk = el('input'); chk.type='checkbox'; chk.id=id;
+      chk.addEventListener('input', saveNow);
+      cell.append(chk);
+      grid.append(cell);
+    });
+  });
+}
+function hcell(t){ const d=el('div','q-h'); d.textContent=t; return d; }
+function bhcell(t){ const d=el('div','q-bh'); d.textContent=t; return d; }
+
+function buildLanes(){
+  const lanes = document.getElementById('lanes'); lanes.innerHTML='';
+  for(let i=1;i<=10;i++){ lanes.append(paceLane(i)); }
+}
+
+function paceLane(idx){
+  let timer=null, startAt=null, lastLap=null, laps=[];
+  const wrap = el('div','lane');
+  const title = el('div','lane-h'); title.textContent = '#'+idx;
+  const read  = el('div','lane-r');
+  const bStart= button('Start', ()=>{
+    if(!startAt){ startAt=Date.now(); lastLap=startAt; laps=[]; update(); saveNow(); }
+    if(!timer){ timer=setInterval(update,100); }
+  });
+  const bLap  = button('Handoff', ()=>{
+    if(!startAt) return;
+    const now=Date.now(); const s = Math.round((now-lastLap)/100)/10;
+    laps.push(s); lastLap=now; update(); saveNow();
+  });
+  const bReset= button('Reset', ()=>{
+    if(!confirm('Are you sure you want to reset this lane?')) return;
+    if(timer){ clearInterval(timer); timer=null; }
+    startAt=null; lastLap=null; laps=[]; update(); saveNow();
+  });
+  const btns=el('div','lane-b'); btns.append(bStart,bLap,bReset);
+  wrap.append(title,read,btns);
+
+  function update(){
+    read.innerHTML='';
+    if(!startAt){ read.textContent='—'; return; }
+    const cur=Math.round((Date.now()-lastLap)/100)/10;
+    const line=el('div','lane-now'); line.textContent='Current: '+cur.toFixed(1)+'s'; read.append(line);
+    if(laps.length){
+      const list=el('div','lane-laps');
+      laps.forEach((v,i)=>{ const d=el('div'); d.textContent='#'+(i+1)+' — '+v.toFixed(1)+'s'; list.append(d); });
+      const avg=laps.reduce((a,b)=>a+b,0)/laps.length; const a=el('div','lane-avg'); a.textContent='Avg: '+avg.toFixed(1)+'s'; list.append(a);
+      read.append(list);
+    }
+  }
+  return wrap;
+}
+
+function button(t,fn){ const b=el('button','btn'); b.textContent=t; b.addEventListener('click',fn); return b; }
+function val(id){ const e=document.getElementById(id); return e?e.value:0; }
+function text(id,v){ const e=document.getElementById(id); if(e) e.textContent=v; }
+
+// Save/restore
+function saveNow(){
+  const data={};
+  ['by','store','date'].forEach(id=>{ const e=document.getElementById(id); if(e) data[id]=e.value; });
+  tallyRows.forEach(r=>{ data['yes_'+r.key]=val('yes_'+r.key); data['no_'+r.key]=val('no_'+r.key); });
+  // quality checkboxes
+  beverages.forEach((_,bi)=>attrs.forEach((__,ai)=>{
+    const id='q_'+bi+'_'+ai, e=document.getElementById(id); if(e) data[id]=e.checked;
+  }));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function restore(){
+  const raw=localStorage.getItem(STORAGE_KEY); if(!raw) return;
+  const d=JSON.parse(raw);
+  ['by','store','date'].forEach(id=>{ const e=document.getElementById(id); if(e&&d[id]!==undefined) e.value=d[id]; });
+  tallyRows.forEach(r=>{
+    const y=document.getElementById('yes_'+r.key); const n=document.getElementById('no_'+r.key);
+    if(y&&d['yes_'+r.key]!==undefined) y.value=d['yes_'+r.key];
+    if(n&&d['no_'+r.key]!==undefined)  n.value=d['no_'+r.key];
+  });
+  beverages.forEach((_,bi)=>attrs.forEach((__,ai)=>{
+    const id='q_'+bi+'_'+ai, e=document.getElementById(id); if(e&&d[id]!==undefined) e.checked=d[id];
+  }));
+  recalc();
+}
+
+document.getElementById('saveBtn').addEventListener('click', saveNow);
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  if(!confirm('Are you sure you want to reset this form?')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  location.reload();
+});
+
+// init
+buildTallies();
+buildQuality();
+buildLanes();
+restore();
+    })();
+  };
+})();
+</script>
+<script>
+document.addEventListener('click',function(e){
+  const t=e.target.closest('[data-id]'); if(!t) return;
+  const id=t.getAttribute('data-id');
+  if(id==='brot' && typeof renderBROT==='function'){ e.preventDefault(); renderBROT(); }
+}, true);
+</script>
+<script>
+// BROT embedded scripts
+(function(){
+
+// Standards % chips
+function updateStd(){ 
+  for (var i=0;i<3;i++){ 
+    var obs=document.getElementsByClassName('stdObs')[i], yes=document.getElementsByClassName('stdYes')[i];
+    var chip=document.getElementById('stdPct_'+i);
+    var o=parseFloat((obs&&obs.value)||'0'), y=parseFloat((yes&&yes.value)||'0');
+    var p=(o>0)?Math.min(y,o)/o*100:0; if(chip) chip.textContent=Math.round(p)+'%';
+  }
+}
+document.querySelectorAll('.stdObs,.stdYes').forEach(function(el){ el.addEventListener('input', updateStd); });
+
+// Quality pass/fail
+function updateQual(){ 
+  for (var r=0;r<3;r++){ 
+    var cells=document.querySelectorAll('.qcrit[data-row="'+r+'"]').length;
+    var checked=document.querySelectorAll('.qcrit[data-row="'+r+'"]:checked').length;
+    var cell=document.getElementById('qoverall_'+r);
+    var pass=(cells>0 && checked===cells);
+    if(cell){ cell.textContent= pass? 'Pass' : 'Fail'; cell.style.color = pass? '#53d17f' : '#ff7a7a'; }
+  }
+}
+document.querySelectorAll('.qcrit').forEach(function(el){ el.addEventListener('change', updateQual); });
+
+// Pace timers
+var timers = Array(10).fill(null), starts = Array(10).fill(0);
+function target(){ var v=document.getElementById('paceLevel').value; if(v==='custom'){ var c=parseFloat(document.getElementById('paceCustom').value||'0'); return c>0?c:23; } return parseFloat(v); }
+window.startTimer=function(i){ starts[i]=Date.now(); if(timers[i]) clearInterval(timers[i]); timers[i]=setInterval(function(){ var t=(Date.now()-starts[i])/1000; document.getElementById('timer_'+i).textContent=t.toFixed(1)+' s'; }, 100); };
+window.stopTimer=function(i){ if(!timers[i]) return; clearInterval(timers[i]); timers[i]=null; var text=document.getElementById('timer_'+i).textContent; var t=parseFloat(text); var ok=t<=target(); var s=document.getElementById('pace_status_'+i); s.textContent = t? ((ok?'Within':'Over')+' ('+t.toFixed(1)+'s)') : '—'; s.style.color = t? (ok?'#53d17f':'#ff7a7a') : '#9aa4b2'; };
+document.getElementById('paceLevel').addEventListener('change', function(e){ document.getElementById('paceCustom').style.display = (e.target.value==='custom')?'inline-block':'none'; });
+
+})();</script><script>
+// Intercept BROT tile to open embedded section
+document.addEventListener('click', function(ev){
+  var btn = ev.target.closest('button, a'); if(!btn) return;
+  var card = btn.closest('.card'); if(!card) return;
+  var h = card.querySelector('h1,h2,h3,h4,h5,h6'); if(!h) return;
+  var title = (h.textContent||'').trim();
+  if(/BROT\s*\u2013|BROT\s*\-|Beverage\s*Routine\s*Observation/i.test(title)){
+    ev.preventDefault();
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    var el=document.getElementById('brot'); if(el){ el.classList.add('active'); window.scrollTo(0,0); }
+  }
+}, true);
+</script><script>
+(function(){
+  function showSection(id){
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    var el = document.getElementById(id);
+    if(el){ el.classList.add('active'); }
+    window.scrollTo(0,0);
+  }
+  window.openSection = showSection;
+
+  function scrubHome(){
+    var home = document.getElementById('home');
+    if(!home) return;
+    var forbidden = /(Beverage\s*Routine\s*Observation|Production\s*Pace|Milk\s*Steaming|Additional\s*Observations|Major\s*Steps)/i;
+    Array.from(home.querySelectorAll('*')).forEach(function(node){
+      if(node.closest('.grid') || node.closest('.card')) return;
+      var txt = (node.textContent||'').trim();
+      if(forbidden.test(txt)) node.remove();
+    });
+  }
+
+  // Back buttons inside #brot route to home and scrub
+  document.addEventListener('click', function(ev){
+    var el = ev.target.closest('button,a,span[role="button"]');
+    if(!el) return;
+    var isInBrot = !!el.closest('#brot');
+    if(!isInBrot) return;
+    var label = ((el.getAttribute('aria-label')||'') + ' ' + (el.textContent||'')).toLowerCase();
+    if(/\bback\b/.test(label)){
+      ev.preventDefault();
+      showSection('home');
+      scrubHome();
+    }
+  }, true);
+
+  // Intercept the BROT tile to open embedded #brot
+  document.addEventListener('click', function(ev){
+    var btn = ev.target.closest('button, a'); if(!btn) return;
+    var card = btn.closest('.card'); if(!card) return;
+    var h = card.querySelector('h1,h2,h3,h4,h5,h6'); if(!h) return;
+    var title = (h.textContent||'').trim();
+    if(/BROT\s*\u2013|BROT\s*-|Beverage\s*Routine\s*Observation/i.test(title)){
+      ev.preventDefault();
+      showSection('brot');
+    }
+  }, true);
+})();
+</script><script>
+(function(){
+  function showSection(id){
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    var el = document.getElementById(id);
+    if(el){ el.classList.add('active'); }
+    window.scrollTo(0,0);
+  }
+  // Force our router
+  window.openSection = showSection;
+
+  // Keyword-based scrub for BROT leakage
+  const BROT_RE = /(Beverage\s*Routine\s*Observation|Production\s*Pace|Milk\s*Steaming|Additional\s*Observations|Major\s*Steps|BROT)/i;
+  function scrubHome(){
+    const home = document.getElementById('home');
+    if(!home) return;
+    // Remove any direct children (non-grid) containing BROT-like content
+    Array.from(home.children).forEach(node => {
+      if(node.matches('.grid, .grid *')) return;
+      const txt = (node.textContent||'').trim();
+      if(BROT_RE.test(txt)) node.remove();
+    });
+  }
+  // Observe home for any accidental injections and scrub them
+  const home = document.getElementById('home');
+  if(home && window.MutationObserver){
+    const mo = new MutationObserver(() => scrubHome());
+    mo.observe(home, {childList:true, subtree:true});
+  }
+
+  // Intercept BROT tile to open BROT section
+  document.addEventListener('click', function(ev){
+    const btn = ev.target.closest('button, a'); if(!btn) return;
+    const card = btn.closest('.card'); if(!card) return;
+    const h = card.querySelector('h1,h2,h3,h4,h5,h6'); if(!h) return;
+    const title = (h.textContent||'').trim();
+    if(/BROT\s*\u2013|BROT\s*-|Beverage\s*Routine\s*Observation/i.test(title)){
+      ev.preventDefault();
+      showSection('brot');
+    }
+  }, true);
+
+  // Any "Back" inside BROT returns home and scrubs
+  document.addEventListener('click', function(ev){
+    const el = ev.target.closest('#brot button, #brot a, #brot span[role="button"]');
+    if(!el) return;
+    const label = ((el.getAttribute('aria-label')||'') + ' ' + (el.textContent||'')).toLowerCase();
+    if(/\bback\b/.test(label)){
+      ev.preventDefault();
+      showSection('home');
+      scrubHome();
+    }
+  }, true);
+})();</script>
+<script>
+(function(){
+  function textEq(node, txt){
+    return node && node.textContent && node.textContent.trim().toLowerCase() === (txt||'').toLowerCase();
+  }
+  document.addEventListener('click', function(e){
+    var t = e.target;
+    // Opening any audit (tile Start buttons commonly live in .tile or similar)
+    if (t.closest && (t.closest('.tile') || t.classList.contains('tile'))) {
+      // Likely a tile click -> mark runner active
+      if (t.tagName === 'BUTTON' || t.tagName === 'A') {
+        document.body.classList.add('runner-active');
+      }
+    }
+    // If the button itself carries "Start" text, also mark active
+    if ((t.tagName === 'BUTTON' || t.tagName === 'A') && textEq(t, 'Start')) {
+      document.body.classList.add('runner-active');
+    }
+    // Back inside the runner – ensure we fully reset state
+    if (t.closest && t.closest('#runner')) {
+      if ((t.tagName === 'BUTTON' || t.tagName === 'A') && textEq(t, 'Back')) {
+        // Let the existing handler do its thing, but also enforce cleanup
+        setTimeout(function(){
+          document.body.classList.remove('runner-active');
+          var sections = document.getElementById('sections');
+          if (sections) { sections.innerHTML = ''; }
+        }, 0);
+      }
+    }
+  }, true);
+})();
+</script>
+<script>
+    (function() {
+      function byText(el, txt) {
+        return el && el.textContent && el.textContent.trim().toLowerCase() === (txt||'').toLowerCase();
+      }
+      function hideInnerBrotPrintButtons() {
+        var brot = document.querySelector('#brot-root');
+        if (!brot) return;
+        var btns = brot.querySelectorAll('button, a[role="button"]');
+        btns.forEach(function(b){
+          try {
+            if (byText(b, 'print')) {
+              b.style.display = 'none';
+              b.classList.add('__brot_inner_print_removed');
+            }
+          } catch(e){}
+        });
+      }
+
+      function setBrotVisible(show) {
+        var brot = document.querySelector('#brot-root');
+        if (!brot) return;
+        brot.style.display = show ? '' : 'none';
+        if (show) hideInnerBrotPrintButtons();
+      }
+
+      // Initial state: hide BROT on load (home screen).
+      document.addEventListener('DOMContentLoaded', function() {
+        setBrotVisible(false);
+        hideInnerBrotPrintButtons();
+
+        // Wire tiles/buttons that have a data-audit attribute or matching text to control visibility
+        function wireTiles() {
+          var tiles = Array.from(document.querySelectorAll('button, a')).filter(function(el){
+            var t = el.textContent && el.textContent.trim().toLowerCase();
+            return t === 'start' || t === 'open' || t === 'begin';
+          });
+          tiles.forEach(function(el){
+            el.addEventListener('click', function(){
+              // On any tile click, default to hiding BROT; it will be re-shown by BROT tile handlers below.
+              setBrotVisible(false);
+            }, {capture:true});
+          });
+
+          // Specifically show BROT when its tile's Start is clicked.
+          var brotTile = Array.from(document.querySelectorAll('*')).find(function(el){
+            return /BROT\s*[—-]\s*Beverage Routine Observation/i.test(el.textContent||'');
+          });
+          if (brotTile) {
+            var startBtn = brotTile.querySelector('button, a');
+            if (startBtn) {
+              startBtn.addEventListener('click', function(){
+                // Defer a tick so other navigation JS runs first
+                setTimeout(function(){ setBrotVisible(true); }, 30);
+              }, {capture:false});
+            }
+          }
+
+          // Hook the global Back buttons to hide BROT when returning home.
+          var backBtns = Array.from(document.querySelectorAll('button, a')).filter(function(el){
+            return /back/i.test(el.textContent||'');
+          });
+          backBtns.forEach(function(b){
+            b.addEventListener('click', function(){
+              setTimeout(function(){ setBrotVisible(false); }, 30);
+            });
+          });
+        }
+
+        wireTiles();
+
+        // Fallback: observe DOM changes (when switching audits) and auto-hide if any different audit appears
+        var obs = new MutationObserver(function(){
+          // If runner shows any other audit title (Food Safety, Allergen, etc.), hide brot
+          var text = document.body.textContent || '';
+          if (/(Food Safety|Allergen|Asset Protection|Store Walk Thru|Drive Thru Go See|Store Experience Self Assessment)/i.test(text)) {
+            setBrotVisible(false);
+          }
+        });
+        obs.observe(document.body, {childList:true, subtree:true});
+      });
+    })();
+    </script>
+<section class="section" id="brot"><div class="wrap"><div class="toolbar"><button class="btn" onclick="window.print()">Print</button></div><div class="wrap">
+<div class="hdr">
+<h1>BROT – Beverage Routine Observation</h1>
+<span class="pill">Standalone</span>
+</div>
+<div class="card">
+<h3 style="margin:0 0 8px 0;font-size:15px;">1) Production Standards (Tallies)</h3>
+<div class="muted">Use tallies below. Add notes per standard in “Additional observations”.</div>
+<div class="muted" style="margin:6px 0 0 0"><details open=""><summary style="cursor:pointer">What to look for – Milk Steaming</summary><div style="margin-top:6px">Tally the number of times milk is being steamed according to the Milk Routine.<br/>Standard: 1. Pour, 2. Aerate (2, 3–4 or 6–8 sec), 3. Auto‑Steam, 4. Clean. Steam to the higher end of the range for “sauce” beverages (e.g., mocha).</div></details></div>
+<div class="opt">
+<div style="min-width:200px;font-weight:600">Milk Steaming</div>
+<label>Observed <input class="input stdObs" min="0" style="max-width:120px" type="number" value="0"/></label>
+<label>Correct <input class="input stdYes" min="0" style="max-width:120px" type="number" value="0"/></label>
+<span class="pill" id="stdPct_0">0%</span>
+</div>
+<div class="opt" style="margin-left:200px"><textarea class="input stdObsNotes" placeholder="Additional observations – Milk Steaming" rows="2" style="width:100%"></textarea></div>
+<div class="muted" style="margin:6px 0 0 0"><details><summary style="cursor:pointer">What to look for – Beverage Routine – Major Steps</summary><div style="margin-top:6px">Tally the number of beverages the barista follows the major steps of the Routine.<br/>Standard: 1. Steam Milk, 2. Queue Shots, 3. Syrup, 4. Finish &amp; Connect.</div></details></div>
+<div class="opt">
+<div style="min-width:200px;font-weight:600">Beverage Routine – Major Steps</div>
+<label>Observed <input class="input stdObs" min="0" style="max-width:120px" type="number" value="0"/></label>
+<label>Correct <input class="input stdYes" min="0" style="max-width:120px" type="number" value="0"/></label>
+<span class="pill" id="stdPct_1">0%</span>
+</div>
+<div class="opt" style="margin-left:200px"><textarea class="input stdObsNotes" placeholder="Additional observations – Major Steps" rows="2" style="width:100%"></textarea></div>
+<div class="muted" style="margin:6px 0 0 0"><details><summary style="cursor:pointer">What to look for – Beverage Sequencing</summary><div style="margin-top:6px">Tally the number of instances the beverages are sequenced.<br/>Standard: Only work on 2 beverages at a time, replace “like for like”, start the second–finish the first, keep machine busy.</div></details></div>
+<div class="opt">
+<div style="min-width:200px;font-weight:600">Beverage Sequencing</div>
+<label>Observed <input class="input stdObs" min="0" style="max-width:120px" type="number" value="0"/></label>
+<label>Correct <input class="input stdYes" min="0" style="max-width:120px" type="number" value="0"/></label>
+<span class="pill" id="stdPct_2">0%</span>
+</div>
+<div class="opt" style="margin-left:200px"><textarea class="input stdObsNotes" placeholder="Additional observations – Sequencing" rows="2" style="width:100%"></textarea></div>
+</div>
+<div class="card" style="margin-top:12px;">
+<h3 style="margin:0 0 8px 0;font-size:15px;">2) Beverage Quality Evaluation</h3>
+<div class="muted" style="margin-top:6px"><details><summary style="cursor:pointer">What to look for – Major Steps</summary><div style="margin-top:6px">Standard: 1. Steam Milk, 2. Queue Shots, 3. Syrup, 4. Finish &amp; Connect.</div></details></div>
+<table class="table">
+<thead><tr><th>Beverage</th><th>Temp</th><th>Full cup</th><th>Foam</th><th>Whip</th><th>Topping</th><th>Milk flavour</th><th>Espresso flavour</th><th>Overall</th></tr></thead>
+<tbody>
+<tr>
+<td>Caffè Latte</td>
+<td><input class="qcrit" data-row="0" type="checkbox"/></td>
+<td><input class="qcrit" data-row="0" type="checkbox"/></td>
+<td><input class="qcrit" data-row="0" type="checkbox"/></td>
+<td><input class="qcrit" data-row="0" type="checkbox"/></td>
+<td><input class="qcrit" data-row="0" type="checkbox"/></td>
+<td><input class="qcrit" data-row="0" type="checkbox"/></td>
+<td><input class="qcrit" data-row="0" type="checkbox"/></td>
+<td id="qoverall_0">Pass</td>
+</tr>
+<tr><td colspan="9"><textarea class="input drinkObs" placeholder="Additional observations – Caffè Latte" rows="2" style="width:100%"></textarea></td></tr>
+<tr>
+<td>Caffè Mocha</td>
+<td><input class="qcrit" data-row="1" type="checkbox"/></td>
+<td><input class="qcrit" data-row="1" type="checkbox"/></td>
+<td><input class="qcrit" data-row="1" type="checkbox"/></td>
+<td><input class="qcrit" data-row="1" type="checkbox"/></td>
+<td><input class="qcrit" data-row="1" type="checkbox"/></td>
+<td><input class="qcrit" data-row="1" type="checkbox"/></td>
+<td><input class="qcrit" data-row="1" type="checkbox"/></td>
+<td id="qoverall_1">Pass</td>
+</tr>
+<tr><td colspan="9"><textarea class="input drinkObs" placeholder="Additional observations – Caffè Mocha" rows="2" style="width:100%"></textarea></td></tr>
+<tr>
+<td>Caramel Macchiato</td>
+<td><input class="qcrit" data-row="2" type="checkbox"/></td>
+<td><input class="qcrit" data-row="2" type="checkbox"/></td>
+<td><input class="qcrit" data-row="2" type="checkbox"/></td>
+<td><input class="qcrit" data-row="2" type="checkbox"/></td>
+<td><input class="qcrit" data-row="2" type="checkbox"/></td>
+<td><input class="qcrit" data-row="2" type="checkbox"/></td>
+<td><input class="qcrit" data-row="2" type="checkbox"/></td>
+<td id="qoverall_2">Pass</td>
+</tr>
+<tr><td colspan="9"><textarea class="input drinkObs" placeholder="Additional observations – Caramel Macchiato" rows="2" style="width:100%"></textarea></td></tr>
+</tbody>
+</table>
+</div>
+<div class="card" style="margin-top:12px;">
+<h3 style="margin:0 8px 8px 0;font-size:15px;display:flex;align-items:center;gap:8px;">3) Production Pace <span class="muted">(seconds between handoffs)</span></h3>
+<div class="opt">
+<label>Production level</label>
+<select id="paceLevel" style="max-width:200px">
+<option value="26">Beginner – target 26s</option>
+<option selected="" value="23">Proficient – target 23s</option>
+<option value="21">Expert – target 21s</option>
+<option value="custom">Custom…</option>
+</select>
+<input class="input" id="paceCustom" placeholder="Custom target (s)" style="max-width:160px; display:none"/>
+</div>
+<table class="table" id="paceTable">
+<thead><tr><th>#</th><th>Type</th><th>Time (s)</th><th>Timer</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><select class="paceType"><option>Espresso</option><option>Blended</option></select></td><td><input class="input paceTime" placeholder="0" style="max-width:120px"/></td><td><button class="btn small" onclick="startTimer(0)">Start</button> <button class="btn small" onclick="stopTimer(0)">Stop</button> <span class="kbd" id="timer_0">0.0 s</span></td><td class="muted" id="pace_status_0">—</td></tr>
+<tr><td>2</td><td><select class="paceType"><option>Espresso</option><option>Blended</option></select></td><td><input class="input paceTime" placeholder="0" style="max-width:120px"/></td><td><button class="btn small" onclick="startTimer(1)">Start</button> <button class="btn small" onclick="stopTimer(1)">Stop</button> <span class="kbd" id="timer_1">0.0 s</span></td><td class="muted" id="pace_status_1">—</td></tr>
+<tr><td>3</td><td><select class="paceType"><option>Espresso</option><option>Blended</option></select></td><td><input class="input paceTime" placeholder="0" style="max-width:120px"/></td><td><button class="btn small" onclick="startTimer(2)">Start</button> <button class="btn small" onclick="stopTimer(2)">Stop</button> <span class="kbd" id="timer_2">0.0 s</span></td><td class="muted" id="pace_status_2">—</td></tr>
+<tr><td>4</td><td><select class="paceType"><option>Espresso</option><option>Blended</option></select></td><td><input class="input paceTime" placeholder="0" style="max-width:120px"/></td><td><button class="btn small" onclick="startTimer(3)">Start</button> <button class="btn small" onclick="stopTimer(3)">Stop</button> <span class="kbd" id="timer_3">0.0 s</span></td><td class="muted" id="pace_status_3">—</td></tr>
+<tr><td>5</td><td><select class="paceType"><option>Espresso</option><option>Blended</option></select></td><td><input class="input paceTime" placeholder="0" style="max-width:120px"/></td><td><button class="btn small" onclick="startTimer(4)">Start</button> <button class="btn small" onclick="stopTimer(4)">Stop</button> <span class="kbd" id="timer_4">0.0 s</span></td><td class="muted" id="pace_status_4">—</td></tr>
+<tr><td>6</td><td><select class="paceType"><option>Espresso</option><option>Blended</option></select></td><td><input class="input paceTime" placeholder="0" style="max-width:120px"/></td><td><button class="btn small" onclick="startTimer(5)">Start</button> <button class="btn small" onclick="stopTimer(5)">Stop</button> <span class="kbd" id="timer_5">0.0 s</span></td><td class="muted" id="pace_status_5">—</td></tr>
+<tr><td>7</td><td><select class="paceType"><option>Espresso</option><option>Blended</option></select></td><td><input class="input paceTime" placeholder="0" style="max-width:120px"/></td><td><button class="btn small" onclick="startTimer(6)">Start</button> <button class="btn small" onclick="stopTimer(6)">Stop</button> <span class="kbd" id="timer_6">0.0 s</span></td><td class="muted" id="pace_status_6">—</td></tr>
+<tr><td>8</td><td><select class="paceType"><option>Espresso</option><option>Blended</option></select></td><td><input class="input paceTime" placeholder="0" style="max-width:120px"/></td><td><button class="btn small" onclick="startTimer(7)">Start</button> <button class="btn small" onclick="stopTimer(7)">Stop</button> <span class="kbd" id="timer_7">0.0 s</span></td><td class="muted" id="pace_status_7">—</td></tr>
+<tr><td>9</td><td><select class="paceType"><option>Espresso</option><option>Blended</option></select></td><td><input class="input paceTime" placeholder="0" style="max-width:120px"/></td><td><button class="btn small" onclick="startTimer(8)">Start</button> <button class="btn small" onclick="stopTimer(8)">Stop</button> <span class="kbd" id="timer_8">0.0 s</span></td><td class="muted" id="pace_status_8">—</td></tr>
+<tr><td>10</td><td><select class="paceType"><option>Espresso</option><option>Blended</option></select></td><td><input class="input paceTime" placeholder="0" style="max-width:120px"/></td><td><button class="btn small" onclick="startTimer(9)">Start</button> <button class="btn small" onclick="stopTimer(9)">Stop</button> <span class="kbd" id="timer_9">0.0 s</span></td><td class="muted" id="pace_status_9">—</td></tr>
+</tbody>
+</table>
+</div>
+<div class="card" style="margin-top:12px;">
+<h3 style="margin:0 0 8px 0;font-size:15px;">Additional Observations</h3>
+<div class="opt"><textarea class="input" placeholder="What moments of Anticipation, Connection, Personalisation and Ownership did you see the barista demonstrate at the hand off plane?" rows="2" style="width:100%"></textarea></div>
+<div class="opt"><textarea class="input" placeholder="How is the support barista assisting the primary barista to keep them customer facing and in routine? (e.g. rinsing pitchers, producing CBS, organising cup queue, replenishment, pouring cold milk into pitchers, etc.)" rows="2" style="width:100%"></textarea></div>
+<div class="opt"><textarea class="input" placeholder="What coaching did you observe around the Beverage Routine? What was effective about the coaching provided?" rows="2" style="width:100%"></textarea></div>
+<div class="opt"><textarea class="input" placeholder="What is enabling the baristas to successfully use the Beverage Routine? Celebrate the small wins!" rows="2" style="width:100%"></textarea></div>
+<div class="opt"><textarea class="input" placeholder="What are the obstacles to successful adoption of the Beverage Routine? Provide specific feedback to allow for baristas to improve problem-solving capability." rows="2" style="width:100%"></textarea></div>
+</div>
+<div style="display:flex;justify-content:flex-end;margin-top:10px"></div>
+<footer>Standalone BROT viewer • v3.20 • This page is independent of the main app logic so it always loads.</footer>
+</div></div></section><script>
+(function(){
+  function openSection(id){
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    var el = document.getElementById(id);
+    if(el){ el.classList.add('active'); }
+    window.scrollTo(0,0);
+    // On any non-BROT section, make sure BROT is hidden
+    if(id !== 'brot'){
+      var brot = document.getElementById('brot');
+      if(brot) brot.classList.remove('active');
+    }
+  }
+  window.openSection = openSection;
+
+  // Intercept tiles: default to hiding BROT when any tile is clicked
+  document.addEventListener('click', function(ev){
+    var btn = ev.target.closest('button, a'); if(!btn) return;
+    var card = btn.closest('.card'); 
+    if(!card) return;
+    var titleEl = card.querySelector('h1,h2,h3,h4,h5,h6');
+    var title = titleEl ? (titleEl.textContent||'').trim() : '';
+    var brot = document.getElementById('brot');
+    if(!/BROT\s*[\u2013\-]|Beverage\s*Routine\s*Observation/i.test(title)){
+      if(brot) brot.classList.remove('active');
+    } else {
+      // Open BROT explicitly
+      ev.preventDefault();
+      openSection('brot');
+    }
+  }, true);
+
+  // Any "Back" inside runner: ensure brot inactive then go home
+  document.addEventListener('click', function(ev){
+    var el = ev.target.closest('button,a');
+    if(!el) return;
+    var label = ((el.getAttribute('aria-label')||'') + ' ' + (el.textContent||'')).toLowerCase();
+    if(/\bback\b/.test(label)){
+      var brot = document.getElementById('brot');
+      if(brot) brot.classList.remove('active');
+    }
+  }, true);
+})();</script><script>
+/* ============================
+   Ops Audits — Email PDF + Photos on Gaps
+   ============================ */
+(function(){
+  const $ = (sel, root=document)=>root.querySelector(sel);
+  const $$ = (sel, root=document)=>Array.from(root.querySelectorAll(sel));
+  function slug(s){return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,64);}
+  function isGapValue(val){ if(!val) return false; val = String(val).toLowerCase(); return /(^|\W)(gap|no|fail|non|non-compliant)(\W|$)/.test(val); }
+
+  function enableGapPhotosForStoreWalk(){
+    document.addEventListener('change', (e)=>{
+      const r = e.target;
+      if(!(r instanceof HTMLInputElement) || r.type!=='radio') return;
+      const block = r.closest('[data-question], .question, fieldset, .row, .card');
+      if(!block) return;
+      const pageTitle = (document.querySelector('h1,h2')||{}).textContent||'';
+      if(!/walk\s*thru|walk-?through/i.test(pageTitle)) return;
+      const checked = block.querySelector('input[type="radio"]:checked');
+      const label = checked && (checked.labels && checked.labels[0] ? checked.labels[0].textContent : checked.value);
+      const isGap = isGapValue(label);
+      let holder = block.querySelector('.gap-photo-holder');
+      if(!holder){
+        holder = document.createElement('div');
+        holder.className = 'gap-photo-holder';
+        holder.innerHTML = '<label style="opacity:.9;display:block;margin-bottom:6px;">Add photo for this gap (optional)</label><input type="file" accept="image/*" capture="environment" class="gap-photo-input" style="display:block;"><img class="gap-photo-thumb" alt="preview">';
+        const notes = block.querySelector('textarea, [contenteditable="true"]');
+        (notes && notes.parentElement ? notes.parentElement : block).appendChild(holder);
+        const input = holder.querySelector('.gap-photo-input');
+        const img = holder.querySelector('.gap-photo-thumb');
+        input.addEventListener('change', ()=>{
+          const f = input.files && input.files[0];
+          if(!f){ img.style.display='none'; img.src=''; return; }
+          const rd = new FileReader();
+          rd.onload = ()=>{ img.src = rd.result; img.style.display='inline-block'; };
+          rd.readAsDataURL(f);
+        });
+      }
+      holder.style.display = isGap ? 'block' : 'none';
+    });
+  }
+
+  function readMeta(root){
+    const title = (root.querySelector('h1,h2')||{}).textContent || 'Audit';
+    const completedBy = ($('input[name*="completed"], input[placeholder*="completed"]', root)||{}).value || '';
+    const store = ($('input[name*="store"], input[placeholder*="store"]', root)||{}).value || '';
+    const date = ($('input[type="date"], input[name*="date"]', root)||{}).value || '';
+    return {title:title.trim(), completedBy, store, date};
+  }
+  function whichAuditKind(title){
+    const t=(title||'').toLowerCase();
+    if(t.includes('food safety')) return 'fs';
+    if(t.includes('health & safety')||t.includes('health and safety')) return 'hs';
+    return 'other';
+  }
+
+  async function buildPDF(root){
+    const { jsPDF } = window.jspdf;
+    const meta = readMeta(root);
+    const kind = whichAuditKind(meta.title);
+    const gapsOnly = (kind==='fs' || kind==='hs');
+    const clone = root.cloneNode(true);
+    // remove toolbar buttons and file inputs in clone
+    $$('.btn, button', clone).forEach(b=>{
+      const txt=(b.textContent||'').trim().toLowerCase();
+      if(['print','save','reset','back','email','email pdf'].includes(txt)) b.remove();
+    });
+    $$('.gap-photo-holder', clone).forEach(n=>n.remove());
+    if(gapsOnly){
+      const blocks = $$('.question, [data-question], fieldset, .row, .card', clone);
+      let kept=0;
+      blocks.forEach(bl=>{
+        const checked = bl.querySelector('input[type="radio"]:checked');
+        const v = checked ? (checked.labels && checked.labels[0] ? checked.labels[0].textContent : checked.value) : '';
+        if(!isGapValue(v)) bl.remove(); else kept++;
+      });
+      if(!kept){
+        const note=document.createElement('div'); note.style.margin='12px 0'; note.style.opacity='0.9'; note.textContent='No gaps were detected at the time of export.';
+        clone.prepend(note);
+      }
+    }
+    const header=document.createElement('div');
+    header.style.padding='10px 0 18px 0'; header.style.borderBottom='1px solid #e6e6e6';
+    header.innerHTML='<div style="font:700 18px system-ui, -apple-system, Segoe UI, Roboto;">'+meta.title+'</div>'+
+                     '<div style="font:400 12px system-ui, -apple-system, Segoe UI, Roboto;opacity:.9;margin-top:4px;">'+
+                     'Completed by: '+(meta.completedBy||'—')+' &nbsp; | &nbsp; '+
+                     'Store: '+(meta.store||'—')+' &nbsp; | &nbsp; '+
+                     'Date: '+(meta.date||new Date().toLocaleDateString())+'</div>';
+    clone.prepend(header);
+
+    // collect gap photos from live DOM (Store Walk)
+    const photoPairs=[];
+    const pageTitle=(document.querySelector('h1,h2')||{}).textContent||'';
+    const isWalk=/walk\s*thru|walk-?through/i.test(pageTitle);
+    if(isWalk){
+      $$('.question, [data-question], fieldset, .row, .card', document).forEach((q,idx)=>{
+        const checked=q.querySelector('input[type="radio"]:checked');
+        const v=checked?(checked.labels&&checked.labels[0]?checked.labels[0].textContent:checked.value):'';
+        if(!isGapValue(v)) return;
+        const finput=q.querySelector('.gap-photo-input');
+        const f=finput && finput.files && finput.files[0];
+        if(f){
+          const caption=(q.querySelector('legend, h3, h4, .title, .label')||{}).textContent || ('Gap #'+(idx+1));
+          photoPairs.push({file:f, caption:caption.trim()});
+        }
+      });
+    }
+
+    const { width:pageW, height:pageH } = { width:595.28, height:841.89 }; // A4 in pt
+    const pdf = new jsPDF({ unit:'pt', format:'a4' });
+    const temp=document.createElement('div');
+    temp.style.position='fixed'; temp.style.left='-99999px'; temp.style.width='800px';
+    temp.appendChild(clone); document.body.appendChild(temp);
+    const canvas=await html2canvas(clone,{ scale:2, backgroundColor:'#ffffff', useCORS:true });
+    const img=canvas.toDataURL('image/png');
+    const imgW=pageW-40; const imgH=canvas.height*(imgW/canvas.width);
+    let y=20;
+    if(imgH<=pageH-40){ pdf.addImage(img,'PNG',20,y,imgW,imgH); }
+    else{
+      let remaining=imgH, sy=0;
+      while(remaining>0){
+        pdf.addImage(img,'PNG',20,y,imgW,imgH,undefined,'FAST',0,sy);
+        remaining-=(pageH-40); sy+=(pageH-40);
+        if(remaining>0) pdf.addPage();
+      }
+    }
+    for(const p of photoPairs){
+      pdf.addPage();
+      pdf.setFont('helvetica','bold'); pdf.setFontSize(13); pdf.text('Gap Photo',20,30);
+      pdf.setFont('helvetica','normal'); pdf.setFontSize(11); pdf.text(p.caption,20,48);
+      const blobUrl=URL.createObjectURL(p.file); const imgEl=new Image(); imgEl.src=blobUrl;
+      await new Promise(res=>imgEl.onload=res);
+      const maxW=pageW-40, maxH=pageH-100; const scale=Math.min(maxW/imgEl.width, maxH/imgEl.height);
+      const w=imgEl.width*scale, h=imgEl.height*scale;
+      const c2=document.createElement('canvas'); c2.width=w; c2.height=h; const g=c2.getContext('2d'); g.drawImage(imgEl,0,0,w,h);
+      const data=c2.toDataURL('image/jpeg',0.9);
+      pdf.addImage(data,'JPEG',20,70,w,h); URL.revokeObjectURL(blobUrl);
+    }
+    document.body.removeChild(temp);
+    return { pdf, meta };
+  }
+
+  async function emailPDFFrom(btn){
+    const root = btn.closest('section,article,main,div') || document.body;
+    const { pdf, meta } = await buildPDF(root);
+    const fileName = `${slug(meta.title||'audit')}.pdf`;
+    const blob = pdf.output('blob');
+    const file = new File([blob], fileName, { type:'application/pdf' });
+    const subject = meta.title || 'Audit';
+    const body = `Please find attached: ${meta.title}`;
+
+    if(navigator.canShare && navigator.canShare({ files:[file] })){
+      try{
+        await navigator.share({ files:[file], title: subject, text: body });
+        return;
+      }catch(e){ /* fallback */ }
+    }
+    // Fallback: download + pre-filled mailto
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fileName; a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 1500);
+    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body + '\n(If not auto-attached, please attach the downloaded PDF: ' + fileName + ')')}`;
+  }
+
+  function injectEmailButtons(){
+    const bars = $$('nav, .toolbar, .actions, .action-row, .btn-row, .topbar, header');
+    bars.forEach(bar=>{
+      if (bar.querySelector('.email-pdf-btn')) return;
+      const hasContext = $$('button, .btn', bar).some(b=>/print|save|reset|back/i.test((b.textContent||'').toLowerCase()));
+      if(!hasContext) return;
+      const btn=document.createElement('button');
+      btn.type='button'; btn.className='btn email-pdf-btn'; btn.style.marginLeft='8px'; btn.textContent='Email PDF';
+      btn.addEventListener('click', ()=> emailPDFFrom(btn));
+      bar.appendChild(btn);
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    injectEmailButtons();
+    enableGapPhotosForStoreWalk();
+    const obs=new MutationObserver(()=>injectEmailButtons());
+    obs.observe(document.body,{childList:true,subtree:true});
+  });
+})();
+</script>
+<script>
+// ===== Label Helper (Shelf Life) — Runner Mode (no global hooks) =====
+(function(){
+  // Dataset
+  const CATALOG = [
+    { name:'Pastries (display — combined Day1/Day2)', category:'Holiday Bakery', storage:'ambient', rule:'pastriesCombined', notes:'Display until 11:00 the day after opening. Sell/Discard by 11:00 on Day 2.' },
+    { name:'Bake in Store Cookies (baked ambient)', category:'Holiday Bakery', storage:'ambient', life:{value:24, unit:'hours'}, notes:'Refer to BBE on frozen unbaked pack.' },
+    { name:'Chocolate Babka (display)', category:'Holiday Bakery', storage:'ambient', life:{value:24, unit:'hours'} },
+    { name:'Muffins (display)', category:'Holiday Bakery', storage:'ambient', life:{value:24, unit:'hours'} },
+    { name:'Mince Pie (display)', category:'Holiday Bakery', storage:'ambient', life:{value:2, unit:'days'} },
+    { name:'Luxury Fruit Toast / Cinnamon Bun (display)', category:'Holiday Bakery', storage:'ambient', rule:'endOfDay', notes:'End of day — discard by close of business today.' },
+    { name:'Dulce de Leche Cookie (display)', category:'Holiday Bakery', storage:'ambient', life:{value:2, unit:'days'} },
+    { name:'Black Forest Slice (display)', category:'Holiday Bakery', storage:'ambient', life:{value:2, unit:'days'} },
+    { name:'Belgian Choc Chunk Cookie (display)', category:'Holiday Bakery', storage:'ambient', life:{value:2, unit:'days'} },
+    { name:'Festive Triple Chocolate Brownie (display)', category:'Holiday Bakery', storage:'ambient', life:{value:3, unit:'days'} },
+    { name:'White Choc & Cherry Blondie (display)', category:'Holiday Bakery', storage:'ambient', life:{value:3, unit:'days'} },
+    { name:'Cake Pops (display)', category:'Holiday Bakery', storage:'ambient', life:{value:3, unit:'days'} },
+    { name:'Loaf Cakes (display)', category:'Holiday Bakery', storage:'ambient', life:{value:2, unit:'days'} },
+    { name:'Chocolate Caramel Shortbread (display)', category:'Holiday Bakery', storage:'ambient', life:{value:4, unit:'days'} },
+    { name:'Toffee Nut Sprinkles (opened)', category:'Holiday Beverage', storage:'ambient', life:{value:7, unit:'days'} },
+    { name:'Cookies & Cream Powder (opened)', category:'Holiday Beverage', storage:'ambient', life:{value:7, unit:'days'} },
+    { name:'Mocha Powder (opened)', category:'Holiday Beverage', storage:'ambient', life:{value:7, unit:'days'} },
+    { name:'Matcha Blend (opened)', category:'Holiday Beverage', storage:'ambient', life:{value:7, unit:'days'} },
+    { name:'Cold Foam Powder (opened)', category:'Holiday Beverage', storage:'ambient', life:{value:14, unit:'days'} },
+    { name:'Caramel Drizzle (opened)', category:'Holiday Beverage', storage:'ambient', life:{value:14, unit:'days'} },
+    { name:'Vanilla Mascarpone Sauce (opened, LTO)', category:'Holiday Beverage', storage:'ambient', life:{value:30, unit:'days'} },
+    { name:'Nutty Flavour Sauce (opened)', category:'Holiday Beverage', storage:'ambient', life:{value:30, unit:'days'} },
+    { name:'All Syrups (core & LTO, opened)', category:'Holiday Beverage', storage:'ambient', life:{value:30, unit:'days'} },
+    { name:'Frappuccino Syrup Base (Coffee/Crème, opened)', category:'Holiday Beverage', storage:'ambient', life:{value:30, unit:'days'} },
+    { name:'Nutmeg (opened)', category:'Holiday Beverage', storage:'ambient', life:{value:4, unit:'months'} },
+    { name:'Cinnamon (opened)', category:'Holiday Beverage', storage:'ambient', life:{value:5, unit:'months'} },
+    { name:'Sugar (opened)', category:'Holiday Beverage', storage:'ambient', life:{value:6, unit:'months'} },
+    { name:'Dairy Milk (opened)', category:'Holiday Chilled', storage:'chilled', life:{value:3, unit:'days'} },
+    { name:'UHT Whipping Cream 1L (opened)', category:'Holiday Chilled', storage:'chilled', life:{value:3, unit:'days'} },
+    { name:'Whipped Cream Canister 700ml', category:'Holiday Chilled', storage:'chilled', notes:'Refer to Use By on pack.' },
+    { name:'Eggnog (opened)', category:'Holiday Chilled', storage:'chilled', life:{value:3, unit:'days'} },
+    { name:'Coconut/Almond/Oat/Soya Dairy Alternatives (opened)', category:'Holiday Chilled', storage:'chilled', life:{value:3, unit:'days'} },
+    { name:'Refresha Beverage Bases (opened)', category:'Holiday Chilled', storage:'chilled', life:{value:3, unit:'days'}, notes:'24 hours ambient permitted.' },
+    { name:'Vegan Soya Whip Topping (opened)', category:'Holiday Chilled', storage:'chilled', life:{value:5, unit:'days'} },
+    { name:'Strawberry Sauce (opened)', category:'Holiday Chilled', storage:'chilled', life:{value:5, unit:'days'}, notes:'24 hours ambient permitted.' },
+    { name:'Chai Concentrate (opened)', category:'Holiday Chilled', storage:'chilled', life:{value:5, unit:'days'}, notes:'24 hours ambient permitted.' },
+    { name:'Lemonade (opened)', category:'Holiday Chilled', storage:'chilled', life:{value:5, unit:'days'}, notes:'24 hours ambient permitted.' },
+    { name:'Apple/Blueberry Pastry Filling (opened)', category:'Holiday Chilled', storage:'chilled', life:{value:7, unit:'days'} },
+    { name:'PSL Topping (opened)', category:'Core Beverage', storage:'ambient', life:{value:3, unit:'months'} },
+    { name:'Refresha Beverage Bases (chilled opened)', category:'Core Beverage', storage:'chilled', life:{value:5, unit:'days'}, notes:'Some lines list 3–5 days.' },
+    { name:'Teavana Green for Iced Tea (made in store)', category:'Core Made in store', storage:'ambient', life:{value:12, unit:'hours'} },
+    { name:'Mocha Sauce (made in store)', category:'Core Made in store', storage:'ambient', life:{value:24, unit:'hours'} },
+    { name:'Frappuccino Roast (made in store)', category:'Core Made in store', storage:'ambient', life:{value:48, unit:'hours'} },
+  ];
+
+  function $id(id){ return document.getElementById(id); }
+  function clear(el){ if(el) el.innerHTML=''; }
+  function roundToHour(d){ const x=new Date(d); if(x.getMinutes()>=30)x.setHours(x.getHours()+1); x.setMinutes(0,0,0); return x; }
+  function addDur(d, life){ const x=new Date(d); if(!life)return x; if(life.unit==='hours')x.setHours(x.getHours()+life.value); if(life.unit==='days')x.setDate(x.getDate()+life.value); if(life.unit==='months')x.setMonth(x.getMonth()+life.value); return x; }
+  function at11(d, plus){ const x=new Date(d); x.setDate(x.getDate()+plus); x.setHours(11,0,0,0); return x; }
+  function fmt(d){ const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:00`; }
+
+  function renderCard(mount, item){
+    const opened = roundToHour(new Date());
+    let discard = opened, extra='';
+    if(item.rule==='pastriesCombined'){ const display=at11(opened,1), disc=at11(opened,2); discard=disc; extra=`<div class="lh-call"><strong>Display until:</strong> <span class="lh-val">${fmt(display)}</span><br/><strong>Sell/Discard by:</strong> <span class="lh-val">${fmt(disc)}</span></div>`; }
+    else if(item.rule==='endOfDay'){ const end=new Date(opened); end.setHours(23,0,0,0); discard=end; extra=`<div class="lh-call"><strong>End of day:</strong> <span class="lh-val">${fmt(end)}</span> <span class="lh-note">(discard by close of business today)</span></div>`; }
+    else if(item.life){ discard=addDur(opened,item.life); }
+    mount.innerHTML = `
+      <div class="lh-label-card">
+        <div><span class="lh-badge">${item.category||''}</span><span class="lh-badge" style="background:#0c2c1f;border-color:#276b4a;color:#bbf7d0">${item.storage||''}</span></div>
+        <div class="lh-title">${item.name}</div>
+        <div class="lh-grid">
+          <div class="lh-box"><div class="lh-cap">Opened</div><div class="lh-val">${fmt(opened)}</div></div>
+          <div class="lh-box"><div class="lh-cap">${item.rule==='pastriesCombined'?'Write Discard by':'Discard by'}</div><div class="lh-val">${fmt(discard)}</div></div>
+        </div>
+        ${item.notes?`<div class="lh-note">${item.notes}</div>`:''}
+        ${extra}
+        <div class="lh-note">Write this: <span class="lh-val" style="font-size:14px">Opened: ${fmt(opened)} · Discard by: ${fmt(discard)}</span></div>
+      </div>`;
+  }
+
+  window.renderLabelHelperRunner = function(){
+    // Show runner, keep toolbar, but hide score/gaps/crit chips only for this audit
+    const home = $id('home'); if(home) home.style.display='none';
+    const runner = $id('runner'); if(runner) runner.style.display='block';
+
+    // Title/desc
+    $id('auditTitle') && ($id('auditTitle').textContent='Label Helper (Shelf Life)');
+    $id('auditDesc') && ($id('auditDesc').textContent='Opened now → Discard by');
+
+    // Hide score/gaps/critical widgets if they exist
+    ['score','gaps','critical','scorePct','gapsCnt','critCnt'].forEach(id=>{ const el=$id(id); if(el) el.style.display='none'; });
+
+    // Build UI
+    const sections = $id('sections'); clear(sections);
+    const wrap = document.createElement('div'); wrap.className='lh-card'; wrap.style.marginTop='8px';
+    wrap.innerHTML = `
+      <style>
+        .lh-row{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+        .lh-input,.lh-select{background:#0b1220;border:1px solid #233042;color:#e5e7eb;border-radius:10px;padding:10px}
+        .lh-input{flex:1}
+        .lh-select{min-width:340px}
+        .lh-output{margin-top:16px}
+        .lh-label-card{border:2px solid #3b82f6;background:linear-gradient(180deg,#091526,#0a1b33);border-radius:18px;padding:18px;box-shadow:0 6px 24px rgba(5,15,30,.4)}
+        .lh-badge{font-size:12px;background:#031428;border:1px solid #2d4e7a;color:#c7d2fe;padding:4px 8px;border-radius:999px;margin-right:6px}
+        .lh-title{font-size:20px;font-weight:700;margin:6px 0 8px}
+        .lh-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .lh-box{padding:10px 12px;border-radius:12px;background:#071428;border:1px dashed #244061}
+        .lh-cap{font-size:12px;color:#9fb1c7;margin-bottom:6px}
+        .lh-val{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:700;font-size:18px;color:#e2e8f0}
+        .lh-note{margin-top:10px;font-size:12px;color:#b6c2d1}
+        .lh-call{margin-top:12px;padding:10px 12px;border-left:3px solid #22c55e;background:#0b1f17;color:#d1fae5;border-radius:8px}
+      </style>
+      <div class="lh-row">
+        <input id="lh-search" class="lh-input" type="text" placeholder="Search product — type to filter…"/>
+        <select id="lh-product" class="lh-select"></select>
+      </div>
+      <div id="lh-info" class="lh-output">Pick a product to see label details…</div>`;
+    sections.appendChild(wrap);
+
+    const sel = wrap.querySelector('#lh-product');
+    const search = wrap.querySelector('#lh-search');
+    const info = wrap.querySelector('#lh-info');
+
+    function filter(){
+      const q = (search.value||'').toLowerCase();
+      const arr = CATALOG.filter(p => p.name.toLowerCase().includes(q) || (p.category||'').toLowerCase().includes(q))
+                         .sort((a,b)=>a.name.localeCompare(b.name));
+      sel.innerHTML = arr.map(p=>`<option value="${p.name}">${p.name} — ${p.category||''}</option>`).join('');
+      if(arr.length){ renderCard(info, arr[0]); }
+      else info.innerHTML='<div class="lh-note">No matches — try a different search.</div>';
+    }
+    search.addEventListener('input', filter);
+    sel.addEventListener('change', ()=>{
+      const item = CATALOG.find(x=>x.name===sel.value);
+      if(item) renderCard(info,item);
+    });
+    // initial
+    sel.innerHTML = CATALOG.map(p=>`<option value="${p.name}">${p.name} — ${p.category||''}</option>`).join('');
+    renderCard(info, CATALOG[0]);
+  };
+
+  // Intercept ONLY our tile via startAudit wrapper (others untouched)
+  const _start = window.startAudit;
+  window.startAudit = function(key){
+    if(key==='label_helper'){ return window.renderLabelHelperRunner(); }
+    return _start ? _start.apply(this, arguments) : undefined;
+  };
+})();
+</script>
+
+
+<script>
+// Restore Score/Gaps/Critical for all *other* audits; hide only for Label Helper
+(function(){
+  function setScoreVisible(show){
+    ['score','gaps','critical','scorePct','gapsCnt','critCnt'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el){ el.style.display = show ? '' : 'none'; }
+    });
+  }
+  const prevStart = window.startAudit;
+  window.startAudit = function(key){
+    if(key === 'label_helper'){
+      setScoreVisible(false);
+      return window.renderLabelHelperRunner();
+    } else {
+      setScoreVisible(true);
+      return prevStart ? prevStart.apply(this, arguments) : undefined;
+    }
+  };
+  // Also make sure using the top nav "Back" returns visibility
+  document.addEventListener('click', function(e){
+    const el = e.target.closest('button,a');
+    if(!el) return;
+    const txt = (el.textContent||'').trim();
+    if(/^Back$/i.test(txt) || /Back to home/i.test(txt)){
+      setScoreVisible(true);
+    }
+  }, true);
+})();
+</script>
+
+</body></html>
